@@ -1,11 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "dist/main.js",
-      "use": "@vercel/node"
-    }
-  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "routes": [
     {
       "src": "/api/(.*)",
@@ -18,8 +14,16 @@
       }
     },
     {
+      "src": "/api/docs/(.*)",
+      "dest": "dist/main.js"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))",
+      "dest": "/public/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "dist/main.js"
     }
   ]
-} 
+}
