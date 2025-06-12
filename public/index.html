@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ETI Immo - Gestion Immobilière</title>
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet">
+  <!-- MDB -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.0/mdb.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8f9fa 0%, #edf2f7 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Roboto', sans-serif;
+    }
+    
+    .container {
+      padding: 20px;
+    }
+    
+    .card {
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    
+    .card-header {
+      background: linear-gradient(45deg, #1a237e, #0d47a1);
+      padding: 2.5rem 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-header:before {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      top: -100px;
+      right: -100px;
+    }
+    
+    .card-header:after {
+      content: "";
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      bottom: -70px;
+      left: -70px;
+    }
+    
+    .card-header h1 {
+      font-weight: 700;
+      color: white;
+      margin-bottom: 0;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .message-text {
+      font-size: 1.2rem;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 0;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .card-body {
+      padding: 2rem;
+    }
+    
+    .btn-floating {
+      width: 50px;
+      height: 50px;
+    }
+    
+    .btn-primary {
+      background-color: #1a237e;
+    }
+    
+    .btn-primary:hover {
+      background-color: #0d47a1;
+    }
+    
+    .btn-secondary {
+      background-color: #0d47a1;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #1565c0;
+    }
+    
+    .info-section {
+      background-color: #f5f7ff;
+      border-radius: 10px;
+      padding: 25px;
+      margin-top: 30px;
+      transition: all 0.3s ease;
+    }
+    
+    .info-section:hover {
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      transform: translateY(-5px);
+    }
+    
+    .info-header {
+      color: #5e35b1;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .info-header i {
+      margin-right: 10px;
+    }
+    
+   
+    
+    .btn-floating i {
+      line-height: 50px;
+    }
+    
+    .badge-api {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 3;
+    }
+    
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    
+    .fade-in {
+      animation: fadeIn 1s;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .button-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 25px 0;
+    }
+    
+    @media (max-width: 576px) {
+      .container {
+        padding: 0rem;
+      }
+
+      .card {
+      border-radius: 0px;
+      box-shadow: 0 0px 0px rgba(0, 0, 0, 0.12), 0 0px 0px rgba(0, 0, 0, 0.06);
+      
+    }
+      .card-header {
+        padding: 1.5rem 1rem;
+      }
+      
+      .card-body {
+        padding: 1.5rem;
+      }
+      
+      .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .info-item i {
+        margin-bottom: 5px;
+      }
+      
+      .info-item strong {
+        min-width: auto;
+        margin-bottom: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card fade-in">
+      <div class="card-header text-center">
+        <span class="badge rounded-pill bg-light text-dark badge-api pulse">API</span>
+        <h1 class="display-5 mb-2">
+          <i class="fas fa-building me-2"></i>ETI Immo API
+        </h1>
+        <p class="message-text">Solution complète de gestion immobilière pour professionnels et particuliers</p>
+      </div>
+      
+      <div class="card-body">
+        <div class="row justify-content-center">
+          <div class="col-md-10">
+            <div class="button-container">
+              <a href="/api/docs" class="btn btn-primary text-white btn-lg btn-rounded shadow-0 d-flex align-items-center">
+                <i class="fas fa-file-code me-2"></i>Documentation
+              </a>
+              <a href="/api" class="btn btn-secondary text-white btn-lg btn-rounded shadow-0 d-flex align-items-center">
+                <i class="fas fa-terminal me-2"></i>API Endpoints
+              </a>
+            </div>
+            
+            <div class="text-center my-4">
+              <div class="d-flex justify-content-center">
+                <button type="button" class="btn btn-floating btn-primary mx-1">
+                  <i class="fab fa-github"></i>
+                </button>
+                <button type="button" class="btn btn-floating btn-primary mx-1">
+                  <i class="fas fa-code"></i>
+                </button>
+                <button type="button" class="btn btn-floating btn-primary mx-1">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="info-section">
+              <h4 class="info-header">
+                <i class="fas fa-info-circle"></i>Informations
+              </h4>
+              
+              <div class="info-item">
+                <i class="fas fa-tag"></i>
+                <strong>Nom:</strong>
+                <span>ETI Immo API</span>
+              </div>
+              
+              <div class="info-item">
+                <i class="fas fa-comment-alt"></i>
+                <strong>Description:</strong>
+                <span>Une API complète pour la gestion immobilière : locations, ventes, gestion des biens et des clients</span>
+              </div>
+              
+              <div class="info-item">
+                <i class="fas fa-file-alt"></i>
+                <strong>Documentation:</strong>
+                <a href="/api/docs" class="d-flex align-items-center">
+                  /api/docs
+                  <i class="fas fa-external-link-alt ms-2" style="font-size: 0.8rem;"></i>
+                </a>
+              </div>
+              
+              <div class="info-item">
+                <i class="fas fa-network-wired"></i>
+                <strong>Endpoints:</strong>
+                <a href="/api" class="d-flex align-items-center">
+                  /api
+                  <i class="fas fa-external-link-alt ms-2" style="font-size: 0.8rem;"></i>
+                </a>
+              </div>
+            </div>
+            
+            <div class="alert alert-info mt-4 d-flex align-items-center" role="alert">
+              <i class="fas fa-lightbulb me-2"></i>
+              <div>
+                Découvrez notre API complète pour gérer efficacement votre portefeuille immobilier.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-footer text-center py-3">
+        <small class="text-muted">© 2024 ETI Immo - Tous droits réservés</small>
+      </div>
+    </div>
+  </div>
+  
+  <!-- MDB JS -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.0/mdb.min.js"></script>
+  <script>
+    // Animation des éléments au chargement
+    document.addEventListener('DOMContentLoaded', () => {
+      const infoSection = document.querySelector('.info-section');
+      const buttons = document.querySelectorAll('.btn-lg');
+      
+      setTimeout(() => {
+        infoSection.classList.add('fade-in');
+      }, 300);
+      
+      buttons.forEach((button, index) => {
+        setTimeout(() => {
+          button.classList.add('fade-in');
+        }, 150 * (index + 1));
+      });
+    });
+  </script>
+</body>
+</html>
