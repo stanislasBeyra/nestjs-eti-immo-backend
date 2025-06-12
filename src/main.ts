@@ -68,8 +68,9 @@ async function bootstrap() {
   // Configuration CORS
   app.enableCors();
 
-  const port = process.env.PORT || 1206;
-  await app.listen(port);
+  // Configuration du port pour Vercel
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
   logger.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();
