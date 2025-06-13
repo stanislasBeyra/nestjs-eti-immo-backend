@@ -5,7 +5,7 @@ import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
 import { 
   ApiTags, 
   ApiOperation, 
@@ -53,7 +53,9 @@ export class DocumentsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/documents',
+        destination: process.env.NODE_ENV === 'production' 
+          ? '/tmp/documents' 
+          : join(process.cwd(), 'uploads', 'documents'),
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);

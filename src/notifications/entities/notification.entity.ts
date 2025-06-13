@@ -1,107 +1,105 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
+import { Locataire } from 'src/locataire/entities/locataire.entity';
+import { Agence } from '../../agence/entities/agence.entity';
 import { User } from '../../users/entities/user.entity';
 import { Paiement } from '../../paiement/entities/paiement.entity';
+import { Bien } from '../../biens/entities/biens.entity';
 
 export enum NotificationType {
-  PAIEMENT_RECU = 'Paiement reçu',
-  PAIEMENT_EN_RETARD = 'Paiement en retard',
-  RAPPEL_PAIEMENT = 'Rappel de paiement',
-  PAIEMENT_ANNULE = 'Paiement annulé',
-  BIEN_AJOUTE = 'Bien ajouté',
-  BIEN_MODIFIE = 'Bien modifié',
-  LOCATION_CREEE = 'Location créée',
-  LOCATION_MODIFIEE = 'Location modifiée',
-  DOCUMENT_AJOUTE = 'Document ajouté',
-  DOCUMENT_EXPIRE = 'Document expiré'
+  PAIEMENT = 'PAIEMENT',
+  RELANCE = 'RELANCE',
+  MESSAGE = 'MESSAGE',
+  ALERTE = 'ALERTE',
+  SYSTEME = 'SYSTEME'
 }
 
-export enum NotificationStatus {
-  NON_LU = 'non_lu',
-  LU = 'lu',
-  ARCHIVE = 'archive'
+export enum NotificationStatut {
+  NON_LU = 'NON_LU',
+  LU = 'LU',
+  ARCHIVE = 'ARCHIVE'
 }
 
 @Entity('notifications')
 export class Notification {
-  @PrimaryGeneratedColumn({ type: 'bigint', comment: 'Identifiant unique de la notification' })
+  @PrimaryGeneratedColumn()
+  @ApiProperty({ description: 'ID unique de la notification' })
   id: number;
 
-  @Column({ 
-    type: 'bigint', 
-    comment: 'ID de l\'utilisateur qui a créé la notification' 
-  })
-  created_by: number;
-
-  @Column({ 
-    type: 'bigint', 
-    nullable: true, 
-    comment: 'ID de l\'élément associé à la notification (paiement, bien, etc.)' 
-  })
-  reference_id: number;
-
-  @Column({ 
-    length: 50, 
-    nullable: true, 
-    comment: 'Type de référence (paiement, bien, location, etc.)' 
-  })
-  reference_type: string;
-
-  @Column({ 
-    type: 'enum', 
-    enum: NotificationType, 
-    comment: 'Type de notification' 
-  })
+  @Column({ type: 'enum', enum: NotificationType })
+  @ApiProperty({ description: 'Type de notification', enum: NotificationType })
   type: NotificationType;
 
-  @Column({ 
-    type: 'enum', 
-    enum: NotificationStatus, 
-    default: NotificationStatus.NON_LU, 
-    comment: 'Statut de la notification' 
-  })
-  status: NotificationStatus;
+  @Column()
+  @ApiProperty({ description: 'Titre de la notification' })
+  titre: string;
 
-  @Column({ 
-    length: 255, 
-    comment: 'Titre de la notification' 
-  })
-  title: string;
-
-  @Column({ 
-    type: 'text', 
-    comment: 'Contenu détaillé de la notification' 
-  })
+  @Column('text')
+  @ApiProperty({ description: 'Contenu de la notification' })
   message: string;
 
-  @Column({ 
-    type: 'json', 
-    nullable: true, 
-    comment: 'Données additionnelles de la notification' 
-  })
-  metadata: Record<string, any>;
+  @Column({ type: 'enum', enum: NotificationStatut, default: NotificationStatut.NON_LU })
+  @ApiProperty({ description: 'Statut de la notification', enum: NotificationStatut })
+  statut: NotificationStatut;
 
-  @Column({ 
-    type: 'timestamp', 
-    nullable: true, 
-    comment: 'Date de lecture de la notification' 
-  })
-  read_at: Date;
+  @Column({ name: 'locataire_id', nullable: true })
+  @ApiProperty({ description: 'ID du locataire destinataire', required: false })
+  locataire_id?: number;
 
-  @CreateDateColumn({ comment: 'Date de création de la notification' })
+  @Column({ name: 'agence_id', nullable: true })
+  @ApiProperty({ description: 'ID de l\'agence émettrice', required: false })
+  agence_id?: number;
+
+  @Column({ name: 'admin_id', nullable: true })
+  @ApiProperty({ description: 'ID de l\'administrateur émetteur', required: false })
+  admin_id?: number;
+
+  @Column({ name: 'paiement_id', nullable: true })
+  @ApiProperty({ description: 'ID du paiement associé', required: false })
+  paiement_id?: number;
+
+  @Column({ name: 'property_id', nullable: true })
+  @ApiProperty({ description: 'ID du bien immobilier concerné', required: false })
+  property_id?: number;
+
+  @Column({ name: 'created_by_user_id', nullable: true })
+  @ApiProperty({ description: 'ID de l\'utilisateur qui a créé la notification', required: false })
+  created_by_user_id?: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  @ApiProperty({ description: 'Date de création de la notification' })
   created_at: Date;
 
-  @UpdateDateColumn({ comment: 'Date de dernière mise à jour' })
+  @UpdateDateColumn({ name: 'updated_at' })
+  @ApiProperty({ description: 'Date de dernière mise à jour de la notification' })
   updated_at: Date;
 
-  @DeleteDateColumn({ comment: 'Date de suppression (soft delete)' })
-  deleted_at: Date;
+  @DeleteDateColumn({ name: 'deleted_at' })
+  @ApiProperty({ description: 'Date de suppression de la notification', required: false })
+  deleted_at?: Date;
 
   // Relations
-  @ManyToOne(() => User, user => user.notifications_created)
-  @JoinColumn({ name: 'created_by' })
-  creator: User;
+  @ManyToOne(() => Locataire, { nullable: true })
+  @JoinColumn({ name: 'locataire_id' })
+  locataire?: Locataire;
 
-  @ManyToOne(() => Paiement, paiement => paiement.notifications, { nullable: true })
-  @JoinColumn({ name: 'reference_id' })
-  paiement: Paiement;
+  @ManyToOne(() => Agence, { nullable: true })
+  @JoinColumn({ name: 'agence_id' })
+  agence?: Agence;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'admin_id' })
+  admin?: User;
+
+  @ManyToOne(() => Paiement, { nullable: true })
+  @JoinColumn({ name: 'paiement_id' })
+  paiement?: Paiement;
+
+  @ManyToOne(() => Bien, { nullable: true })
+  @JoinColumn({ name: 'property_id' })
+  property?: Bien;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'created_by_user_id' })
+  created_by_user?: User;
 }

@@ -7,70 +7,92 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
   
-  // Configuration des fichiers statiques
-  app.useStaticAssets(join(__dirname, '..', 'public'));
-  app.setBaseViewsDir(join(__dirname, '..', 'public'));
-  app.setViewEngine('html');
-  
-  // Configuration globale
-  app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    exceptionFactory: (errors) => {
-      const messages = errors.map(error => ({
-        field: error.property,
-        constraints: error.constraints,
-        value: error.value
-      }));
-      return new HttpException({
-        message: 'Erreur de validation',
-        details: messages,
-        error: 'ValidationError',
-        timestamp: new Date().toISOString()
-      }, 400);
-    }
-  }));
+  try {
+    logger.log('Starting application...');
+    logger.log('Environment variables check:');
+    logger.log(`DB_HOST: ${process.env.DB_HOST ? 'Set' : 'Not set'}`);
+    logger.log(`DB_PORT: ${process.env.DB_PORT ? 'Set' : 'Not set'}`);
+    logger.log(`DB_USERNAME: ${process.env.DB_USERNAME ? 'Set' : 'Not set'}`);
+    logger.log(`DB_NAME: ${process.env.DB_NAME ? 'Set' : 'Not set'}`);
+    logger.log(`NODE_ENV: ${process.env.NODE_ENV || 'Not set'}`);
 
-  // Ajout du filtre d'exception global
-  app.useGlobalFilters(new HttpExceptionFilter());
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    });
+    
+    // Configuration des fichiers statiques
+    app.useStaticAssets(join(__dirname, '..', 'public'));
+    app.setBaseViewsDir(join(__dirname, '..', 'public'));
+    app.setViewEngine('html');
+    
+    // Configuration globale
+    app.setGlobalPrefix('api');
+    app.useGlobalPipes(new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      exceptionFactory: (errors) => {
+        const messages = errors.map(error => ({
+          field: error.property,
+          constraints: error.constraints,
+          value: error.value
+        }));
+        return new HttpException({
+          message: 'Erreur de validation',
+          details: messages,
+          error: 'ValidationError',
+          timestamp: new Date().toISOString()
+        }, 400);
+      }
+    }));
 
-  // Configuration Swagger
-  const config = new DocumentBuilder()
-    .setTitle('API Immobilière')
-    .setDescription('API de gestion immobilière')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Entrez votre token JWT',
-        in: 'header',
+    // Ajout du filtre d'exception global
+    app.useGlobalFilters(new HttpExceptionFilter());
+
+    // Configuration Swagger
+    const config = new DocumentBuilder()
+      .setTitle('API Immobilière')
+      .setDescription('API de gestion immobilière')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Entrez votre token JWT',
+          in: 'header',
+        },
+        'JWT-auth',
+      )
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
       },
-      'JWT-auth', // Ce nom doit correspondre à celui utilisé dans @ApiBearerAuth()
-    )
-    .build();
+      customSiteTitle: 'API Documentation',
+    });
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-    customSiteTitle: 'API Documentation',
-  });
+    // Configuration CORS
+    app.enableCors();
 
-  // Configuration CORS
-  app.enableCors();
-
-  // Configuration du port pour Vercel
-  const port = process.env.PORT || 3000;
-  await app.listen(port, '0.0.0.0');
-  logger.log(`Application is running on: ${await app.getUrl()}`);
+    // Configuration du port pour Vercel
+    const port = process.env.PORT || 3000;
+    await app.listen(port, '0.0.0.0');
+    logger.log(`Application is running on: ${await app.getUrl()}`);
+  } catch (error) {
+    logger.error('Error during application bootstrap:', error);
+    logger.error('Stack trace:', error.stack);
+    throw error; // Re-throw to ensure Vercel sees the error
+  }
 }
-bootstrap();
+
+// Wrap bootstrap in a try-catch to ensure we log any startup errors
+bootstrap().catch(error => {
+  console.error('Fatal error during bootstrap:', error);
+  process.exit(1);
+});

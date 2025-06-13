@@ -116,7 +116,7 @@ export class User {
   @OneToMany(() => Location, location => location.created_by)
   locations_created: Location[];
 
-  @OneToMany(() => Notification, notification => notification.creator)
+  @OneToMany(() => Notification, notification => notification.created_by_user)
   notifications_created: Notification[];
 
   @OneToMany(() => Agence, agence => agence.admin)

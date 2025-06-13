@@ -42,7 +42,7 @@ import AppDataSource from './data-source';
       subscribers: [__dirname + '/**/*.subscriber{.ts,.js}'],
       migrationsRun: false,
       migrationsTableName: 'migrations',
-      migrationsTransactionMode: 'each',
+      migrationsTransactionMode: 'each', 
       charset: 'utf8mb4'
     }),
 

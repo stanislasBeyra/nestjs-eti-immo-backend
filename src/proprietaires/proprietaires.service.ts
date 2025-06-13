@@ -1,26 +1,50 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { CreateProprietaireDto } from './dto/create-proprietaire.dto';
 import { UpdateProprietaireDto } from './dto/update-proprietaire.dto';
+import { Proprietaire } from './entities/proprietaire.entity';
 
 @Injectable()
 export class ProprietairesService {
-  create(createProprietaireDto: CreateProprietaireDto) {
-    return 'This action adds a new proprietaire';
+  constructor(
+    @InjectRepository(Proprietaire)
+    private proprietairesRepository: Repository<Proprietaire>,
+  ) {}
+
+  async create(createProprietaireDto: CreateProprietaireDto): Promise<Proprietaire> {
+    const proprietaire = this.proprietairesRepository.create(createProprietaireDto);
+    return await this.proprietairesRepository.save(proprietaire);
   }
 
-  findAll() {
-    return `This action returns all proprietaires`;
+  async findAll(): Promise<Proprietaire[]> {
+    return await this.proprietairesRepository.find({
+      where: { deleted_at: IsNull() },
+      relations: ['agence', 'properties', 'paiements'],
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} proprietaire`;
+  async findOne(id: number): Promise<Proprietaire> {
+    const proprietaire = await this.proprietairesRepository.findOne({
+      where: { id, deleted_at: IsNull() },
+      relations: ['agence', 'properties', 'paiements'],
+    });
+
+    if (!proprietaire) {
+      throw new NotFoundException(`Proprietaire with ID ${id} not found`);
+    }
+
+    return proprietaire;
   }
 
-  update(id: number, updateProprietaireDto: UpdateProprietaireDto) {
-    return `This action updates a #${id} proprietaire`;
+  async update(id: number, updateProprietaireDto: UpdateProprietaireDto): Promise<Proprietaire> {
+    const proprietaire = await this.findOne(id);
+    Object.assign(proprietaire, updateProprietaireDto);
+    return this.proprietairesRepository.save(proprietaire);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} proprietaire`;
+  async remove(id: number): Promise<void> {
+    await this.findOne(id);
+    await this.proprietairesRepository.softDelete(id);
   }
 }
