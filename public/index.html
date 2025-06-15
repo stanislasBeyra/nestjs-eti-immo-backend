@@ -234,6 +234,9 @@
               <a href="/api" class="btn btn-secondary text-white btn-lg btn-rounded shadow-0 d-flex align-items-center">
                 <i class="fas fa-terminal me-2"></i>API Endpoints
               </a>
+              <button onclick="downloadSwaggerJson()" class="btn btn-success text-white btn-lg btn-rounded shadow-0 d-flex align-items-center">
+                <i class="fas fa-download me-2"></i>Télécharger la documentation en JSON
+              </button>
             </div>
             
             <div class="text-center my-4">
@@ -320,6 +323,98 @@
         }, 150 * (index + 1));
       });
     });
+
+    async function downloadSwaggerJson() {
+      try {
+        const response = await fetch('/api/docs-json');
+        if (!response.ok) {
+          throw new Error('Erreur lors du téléchargement');
+        }
+        const data = await response.json();
+        
+        // Ajouter l'URL de base dans la documentation
+        const baseUrl = window.location.origin;
+        data.servers = [
+          {
+            url: baseUrl,
+            description: 'Serveur de production'
+          },
+          {
+            url: 'http://localhost:3000',
+            description: 'Serveur de développement local'
+          }
+        ];
+
+        // Ajouter des informations supplémentaires
+        data.info = {
+          ...data.info,
+          'x-baseUrl': baseUrl,
+          'x-downloadDate': new Date().toISOString(),
+          'x-environment': window.location.hostname === 'localhost' ? 'development' : 'production'
+        };
+        
+        // Créer un blob avec les données JSON
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        
+        // Créer un lien de téléchargement avec un nom de fichier plus descriptif
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const date = new Date().toISOString().split('T')[0];
+        a.download = `swagger-documentation-${date}.json`;
+        
+        // Déclencher le téléchargement
+        document.body.appendChild(a);
+        a.click();
+        
+        // Nettoyer
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        // Afficher une notification de succès
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '5';
+        toast.innerHTML = `
+          <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+              <i class="fas fa-check-circle me-2"></i>
+              <strong class="me-auto">Succès</strong>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+              Documentation téléchargée avec succès !<br>
+              <small>URL de base: ${baseUrl}</small>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.remove();
+        }, 5000); // Augmenté à 5 secondes pour avoir le temps de lire l'URL
+      } catch (error) {
+        // Afficher une notification d'erreur
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '5';
+        toast.innerHTML = `
+          <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-danger text-white">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              <strong class="me-auto">Erreur</strong>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+              Erreur lors du téléchargement : ${error.message}
+            </div>
+          </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.remove();
+        }, 3000);
+      }
+    }
   </script>
 </body>
 </html>

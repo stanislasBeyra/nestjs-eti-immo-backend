@@ -1,21 +1,22 @@
-import { Module, Global, forwardRef } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { UsersModule } from '../users/users.module';
+import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { LocataireModule } from 'src/locataire/locataire.module';
+import { UsersModule } from '../users/users.module';
+import { LocataireModule } from '../locataire/locataire.module';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { AgenceModule } from '../agence/agence.module';
 
-@Global()
 @Module({
   imports: [
     UsersModule,
-    forwardRef(() => LocataireModule),
+    LocataireModule,
+    AgenceModule,
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'votre_secret_jwt_super_securise',
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '24h' },
     }),
   ],
   controllers: [AuthController],

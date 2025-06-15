@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
@@ -15,13 +15,17 @@ import {
   ApiBearerAuth,
   ApiParam
 } from '@nestjs/swagger';
+import { AgenceService } from '../agence/agence.service';
 
 @ApiTags('Documents')
 @ApiBearerAuth()
 @Controller('documents')
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(
+    private readonly documentsService: DocumentsService,
+    private readonly agenceService: AgenceService,
+  ) {}
 
   @Post('upload')
   @ApiOperation({ summary: 'Uploader un nouveau document' })
@@ -74,10 +78,20 @@ export class DocumentsController {
     @UploadedFile() file: Express.Multer.File,
     @Body() createDocumentDto: CreateDocumentDto,
   ) {
+    console.log('User from request:', req.user);
+    
+    // Récupérer l'agence par email
+    const agence = await this.agenceService.findByEmail(req.user?.email);
+    if (!agence) {
+      throw new BadRequestException('Aucune agence associée à cet utilisateur');
+    }
+
+     console.log('agence recuperer',agence)
+
     return this.documentsService.create({
       ...createDocumentDto,
       file_path: file.path,
-      agence_id: req.user.agence_id,
+      agence_id: agence.id,
     });
   }
 

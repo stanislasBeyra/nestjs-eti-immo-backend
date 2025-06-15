@@ -5,6 +5,7 @@ import { DocumentsController } from './documents.controller';
 import { AgencyDocument } from './entities/document.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { join } from 'path';
+import { AgenceModule } from '../agence/agence.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { join } from 'path';
         ? '/tmp/documents' 
         : join(process.cwd(), 'uploads', 'documents'),
     }),
+    AgenceModule,
   ],
   controllers: [DocumentsController],
   providers: [DocumentsService],

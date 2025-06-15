@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LocataireService } from '../locataire/locataire.service';
+import { AgenceService } from '../agence/agence.service';
 import { LoginDto } from './dto/login.dto';
 import { LocataireLoginDto } from './dto/locataire-login.dto';
 import * as bcrypt from 'bcrypt';
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private locataireService: LocataireService,
+    private agenceService: AgenceService,
     private jwtService: JwtService,
   ) {}
 

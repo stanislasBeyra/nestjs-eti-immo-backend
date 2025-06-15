@@ -90,7 +90,8 @@ export class UsersService {
 
   async findByEmail(email: string) {
     return this.usersRepository.findOne({
-      where: { email }
+      where: { email },
+      relations: ['agences']
     });
   }
 
