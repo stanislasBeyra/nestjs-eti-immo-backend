@@ -1,11 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ProprietairesService } from './proprietaires.service';
 import { CreateProprietaireDto } from './dto/create-proprietaire.dto';
 import { UpdateProprietaireDto } from './dto/update-proprietaire.dto';
 import { Proprietaire } from './entities/proprietaire.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserCategorie } from '../users/entities/user.entity';
+import { GetCurrentUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('proprietaires')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserCategorie.AGENT)
 @Controller('proprietaires')
 export class ProprietairesController {
   constructor(private readonly proprietairesService: ProprietairesService) {}
@@ -19,8 +27,14 @@ export class ProprietairesController {
     type: Proprietaire 
   })
   @ApiResponse({ status: 400, description: 'Données invalides' })
-  create(@Body() createProprietaireDto: CreateProprietaireDto): Promise<Proprietaire> {
-    return this.proprietairesService.create(createProprietaireDto);
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès refusé - Seuls les agents peuvent accéder' })
+  @ApiResponse({ status: 404, description: 'Agence non trouvée pour l\'utilisateur connecté' })
+  create(
+    @Body() createProprietaireDto: CreateProprietaireDto,
+    @GetCurrentUser() currentUser: CurrentUser
+  ): Promise<Proprietaire> {
+    return this.proprietairesService.create(createProprietaireDto, currentUser.id);
   }
 
   @Get()
@@ -30,8 +44,10 @@ export class ProprietairesController {
     description: 'Liste de tous les propriétaires',
     type: [Proprietaire]
   })
-  findAll(): Promise<Proprietaire[]> {
-    return this.proprietairesService.findAll();
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès refusé - Seuls les agents peuvent accéder' })
+  findAll(@GetCurrentUser() currentUser: CurrentUser): Promise<Proprietaire[]> {
+    return this.proprietairesService.findAll(currentUser.id);
   }
 
   @Get(':id')
@@ -43,8 +59,13 @@ export class ProprietairesController {
     type: Proprietaire 
   })
   @ApiResponse({ status: 404, description: 'Propriétaire non trouvé' })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<Proprietaire> {
-    return this.proprietairesService.findOne(id);
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès refusé - Seuls les agents peuvent accéder' })
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @GetCurrentUser() currentUser: CurrentUser
+  ): Promise<Proprietaire> {
+    return this.proprietairesService.findOne(id, currentUser.id);
   }
 
   @Patch(':id')
@@ -58,11 +79,14 @@ export class ProprietairesController {
   })
   @ApiResponse({ status: 404, description: 'Propriétaire non trouvé' })
   @ApiResponse({ status: 400, description: 'Données invalides' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès refusé - Seuls les agents peuvent accéder' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProprietaireDto: UpdateProprietaireDto,
+    @GetCurrentUser() currentUser: CurrentUser
   ): Promise<Proprietaire> {
-    return this.proprietairesService.update(id, updateProprietaireDto);
+    return this.proprietairesService.update(id, updateProprietaireDto, currentUser.id);
   }
 
   @Delete(':id')
@@ -70,7 +94,12 @@ export class ProprietairesController {
   @ApiParam({ name: 'id', description: 'ID du propriétaire à supprimer' })
   @ApiResponse({ status: 200, description: 'Le propriétaire a été supprimé avec succès' })
   @ApiResponse({ status: 404, description: 'Propriétaire non trouvé' })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.proprietairesService.remove(id);
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès refusé - Seuls les agents peuvent accéder' })
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @GetCurrentUser() currentUser: CurrentUser
+  ): Promise<void> {
+    return this.proprietairesService.remove(id, currentUser.id);
   }
 }
