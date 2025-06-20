@@ -240,6 +240,7 @@ export class AgenceService {
       throw new BadRequestException('Erreur lors de la recherche de l\'agence: ' + error.message);
     }
   }
+  
  
    async updateagencestatus(id:number, status:number){
     try{
