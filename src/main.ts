@@ -5,18 +5,26 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { logger } from './common/config/winston.config';
+import { LoggingService } from './common/services/logging.service';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
+  const nestLogger = new Logger('Bootstrap');
+  const loggingService = new LoggingService();
   
   try {
-    logger.log('Starting application...');
-    logger.log('Environment variables check:');
-    logger.log(`DB_HOST: ${process.env.DB_HOST ? 'Set' : 'Not set'}`);
-    logger.log(`DB_PORT: ${process.env.DB_PORT ? 'Set' : 'Not set'}`);
-    logger.log(`DB_USERNAME: ${process.env.DB_USERNAME ? 'Set' : 'Not set'}`);
-    logger.log(`DB_NAME: ${process.env.DB_NAME ? 'Set' : 'Not set'}`);
-    logger.log(`NODE_ENV: ${process.env.NODE_ENV || 'Not set'}`);
+    nestLogger.log('Starting application...');
+    logger.info('Démarrage de l\'application...');
+    
+    // Log des variables d'environnement
+    logger.debug('Vérification des variables d\'environnement', {
+      DB_HOST: process.env.DB_HOST ? 'Set' : 'Not set',
+      DB_PORT: process.env.DB_PORT ? 'Set' : 'Not set',
+      DB_USERNAME: process.env.DB_USERNAME ? 'Set' : 'Not set',
+      DB_NAME: process.env.DB_NAME ? 'Set' : 'Not set',
+      NODE_ENV: process.env.NODE_ENV || 'Not set',
+      LOG_LEVEL: process.env.LOG_LEVEL || 'info'
+    });
 
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -99,12 +107,38 @@ async function bootstrap() {
     app.enableCors();
 
     // Configuration du port pour Vercel
-    const port = process.env.PORT || 3000;
+    const port = parseInt(process.env.PORT || '3000', 10);
     await app.listen(port, '0.0.0.0');
-    logger.log(`Application is running on: ${await app.getUrl()}`);
+    
+    const appUrl = await app.getUrl();
+    nestLogger.log(`Application is running on: ${appUrl}`);
+    
+    // Log du démarrage de l'application avec Winston
+    loggingService.logApplicationStart(port, process.env.NODE_ENV || 'development', {
+      appUrl,
+      environment: process.env.NODE_ENV || 'development',
+      logLevel: process.env.LOG_LEVEL || 'info'
+    });
+
+    // Gestion de l'arrêt gracieux
+    process.on('SIGTERM', () => {
+      logger.info('SIGTERM reçu, arrêt gracieux...');
+      loggingService.logApplicationShutdown('SIGTERM signal');
+      process.exit(0);
+    });
+
+    process.on('SIGINT', () => {
+      logger.info('SIGINT reçu, arrêt gracieux...');
+      loggingService.logApplicationShutdown('SIGINT signal');
+      process.exit(0);
+    });
+
   } catch (error) {
-    logger.error('Error during application bootstrap:', error);
-    logger.error('Stack trace:', error.stack);
+    nestLogger.error('Error during application bootstrap:', error);
+    logger.error('Erreur lors du démarrage de l\'application', error, {
+      error: error.message,
+      stack: error.stack
+    });
     throw error; // Re-throw to ensure Vercel sees the error
   }
 }
@@ -112,5 +146,9 @@ async function bootstrap() {
 // Wrap bootstrap in a try-catch to ensure we log any startup errors
 bootstrap().catch(error => {
   console.error('Fatal error during bootstrap:', error);
+  logger.error('Erreur fatale lors du démarrage', error, {
+    error: error.message,
+    stack: error.stack
+  });
   process.exit(1);
 });

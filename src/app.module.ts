@@ -25,6 +25,7 @@ import AppDataSource from './data-source';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ValidationPipe } from './common/pipes/validation.pipe';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { LoggingModule } from './common/modules/logging.module';
 
 @Module({
   imports: [
@@ -32,6 +33,9 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    // Module de logging global
+    LoggingModule,
 
     // Configuration TypeORM
     TypeOrmModule.forRoot({
