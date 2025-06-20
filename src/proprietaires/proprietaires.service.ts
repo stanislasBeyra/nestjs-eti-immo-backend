@@ -19,24 +19,15 @@ export class ProprietairesService {
   ) {}
 
   async create(createProprietaireDto: CreateProprietaireDto, userId: number): Promise<Proprietaire> {
-    console.log('🚀 ID de l\'utilisateur connecté:', userId);
     this.logger.log(`Création d'un propriétaire par l'utilisateur ID: ${userId}`);
-    
     // Récupérer l'utilisateur connecté pour avoir son email
     const currentUser = await this.usersService.findOne(userId);
-    console.log('👤 Utilisateur connecté:', currentUser);
-    
     // Chercher l'agence par l'email de l'utilisateur
     const userAgency = await this.agenceService.findByEmail(currentUser.email);
-    console.log('🏢 Agence trouvée par email:', userAgency);
-    
     if (!userAgency) {
       throw new BadRequestException('Aucune agence trouvée pour l\'utilisateur connecté');
     }
-
-    console.log('🏢 ID de l\'agence de l\'utilisateur:', userAgency.id);
     this.logger.log(`Agence trouvée pour l'utilisateur ${userId}: ${userAgency.id}`);
-
     // Créer le propriétaire avec l'agences_id automatiquement défini
     const proprietaire = this.proprietairesRepository.create({
       ...createProprietaireDto,
@@ -44,7 +35,6 @@ export class ProprietairesService {
     });
 
     const savedProprietaire = await this.proprietairesRepository.save(proprietaire);
-    console.log('✅ Propriétaire créé avec succès, ID:', savedProprietaire.id);
     this.logger.log(`Propriétaire créé avec succès - ID: ${savedProprietaire.id}, Agence: ${userAgency.id}`);
 
     return savedProprietaire;

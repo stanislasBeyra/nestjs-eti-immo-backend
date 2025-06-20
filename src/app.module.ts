@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
+import { APP_FILTER, APP_PIPE, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -19,6 +20,11 @@ import { UsersModule } from './users/users.module';
 
 // Configuration TypeORM
 import AppDataSource from './data-source';
+
+// Composants globaux
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ValidationPipe } from './common/pipes/validation.pipe';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 @Module({
   imports: [
@@ -59,7 +65,24 @@ import AppDataSource from './data-source';
     NotificationsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Filtre d'exception global
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    // Pipe de validation global
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
+    },
+    // Intercepteur de transformation global
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
+  ],
 })
 export class AppModule {}
 
