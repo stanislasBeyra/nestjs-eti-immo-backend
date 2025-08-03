@@ -12,9 +12,7 @@ import { join } from 'path';
   imports: [
     TypeOrmModule.forFeature([Agence, AgencyDocument]),
     MulterModule.register({
-      dest: process.env.NODE_ENV === 'production' 
-        ? '/tmp/agences' 
-        : join(process.cwd(), 'uploads', 'agences'),
+      dest: join(process.cwd(), 'public', 'uploads', 'agences'),
     }),
     UsersModule,
   ],

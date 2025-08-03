@@ -13,7 +13,7 @@ import { AgenceModule } from '../agence/agence.module';
     MulterModule.register({
       dest: process.env.NODE_ENV === 'production' 
         ? '/tmp/documents' 
-        : join(process.cwd(), 'uploads', 'documents'),
+        : join(process.cwd(), 'public', 'uploads', 'documents'),
     }),
     AgenceModule,
   ],

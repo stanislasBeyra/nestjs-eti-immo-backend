@@ -1,95 +1,137 @@
-import { IsString, IsNumber, IsOptional, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsInt, IsEnum, IsArray, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { PropertyType, PropertyCategorie, PropertyStatus } from '../entities/bien.entity';
 
 export class CreateBiensDto {
-  @ApiProperty({ description: 'ID de l\'agence associée au bien', minimum: 1 })
+  @ApiProperty()
   @IsInt()
-  @Min(1)
-  agence_id: number;
+  proprietaire_id: number;
 
-  @ApiProperty({ description: 'Type de bien (appartement, maison, etc.)' })
+  @ApiProperty()
   @IsString()
-  type_bien: string;
+  title: string;
 
-  @ApiProperty({ description: 'Titre du bien' })
+  @ApiProperty({ enum: PropertyCategorie })
+  @IsEnum(PropertyCategorie)
+  categorie: PropertyCategorie;
+
+  @ApiProperty({ enum: PropertyType })
+  @IsEnum(PropertyType)
+  type: PropertyType;
+
+  @ApiProperty({ enum: PropertyStatus, default: PropertyStatus.DISPONIBLE })
+  @IsOptional()
+  @IsEnum(PropertyStatus)
+  status?: PropertyStatus;
+
+  @ApiProperty()
   @IsString()
-  titre: string;
+  address: string;
 
-  @ApiProperty({ description: 'Description détaillée du bien' })
+  @ApiProperty()
   @IsString()
-  description: string;
+  localite: string;
 
-  @ApiProperty({ description: 'Adresse du bien' })
-  @IsString()
-  adresse: string;
-
-  @ApiProperty({ description: 'Ville du bien' })
-  @IsString()
-  ville: string;
-
-  @ApiProperty({ description: 'Code postal du bien' })
-  @IsString()
-  code_postal: string;
-
-  @ApiProperty({ description: 'Surface du bien en m²', minimum: 0 })
+  @ApiProperty()
   @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  surface: number;
+  loyer: number;
 
-  @ApiProperty({ description: 'Nombre de pièces', minimum: 0 })
-  @IsInt()
-  @Min(0)
-  nombre_pieces: number;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  main_image?: string;
 
-  @ApiProperty({ description: 'Nombre de chambres', minimum: 0 })
-  @IsInt()
-  @Min(0)
-  nombre_chambres: number;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  reference?: string;
 
-  @ApiProperty({ description: 'Nombre de salles de bain', minimum: 0 })
-  @IsInt()
-  @Min(0)
-  nombre_sdb: number;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
 
-  @ApiProperty({ description: 'Prix de location mensuel', minimum: 0 })
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  prix_location: number;
+  superficie?: number;
 
-  @ApiProperty({ description: 'Caution requise', minimum: 0 })
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  caution: number;
-
-  @ApiProperty({ description: 'Équipements disponibles', required: false })
-  @IsOptional()
-  @IsString()
-  equipements?: string;
-
-  @ApiProperty({ description: 'Photos du bien', required: false })
-  @IsOptional()
-  @IsString()
-  photos?: string;
-
-  @ApiProperty({ 
-    description: 'Statut du bien (0: indisponible, 1: disponible)', 
-    required: false, 
-    default: 1, 
-    minimum: 0, 
-    maximum: 1 
-  })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsInt()
-  @Min(0)
-  @Max(1)
-  statut?: number;
+  pieces?: number;
 
-  @ApiProperty({ description: 'Notes supplémentaires', required: false })
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  bedrooms?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  bathrooms?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  floor?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  garages?: number;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  amenities?: string[];
+
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  notes?: string;
+  area?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  deposit?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  charges?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  agency_fees?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  property_title_doc?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  lease_doc?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  condition_doc?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  other_docs?: string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 } 

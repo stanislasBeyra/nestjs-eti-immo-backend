@@ -59,7 +59,7 @@ export class DocumentsController {
       storage: diskStorage({
         destination: process.env.NODE_ENV === 'production' 
           ? '/tmp/documents' 
-          : join(process.cwd(), 'uploads', 'documents'),
+          :join(process.cwd(), 'public', 'uploads', 'documents'),
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
@@ -103,6 +103,21 @@ export class DocumentsController {
     return this.documentsService.findAll();
   }
 
+  @Get('/get/agence')
+  @ApiOperation({ summary: 'Récupérer les documents de l\'agence de l\'utilisateur connecté' })
+  @ApiResponse({ status: 200, description: 'Liste des documents de l\'agence récupérée' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  async findByAgenceDocument(@Request() req) {
+    // Récupérer l'agence par email de l'utilisateur connecté
+    const agence = await this.agenceService.findByEmail(req.user?.email);
+    if (!agence) {
+      throw new BadRequestException('Aucune agence associée à cet utilisateur');
+    }
+    
+    return this.documentsService.findByAgenceId(agence.id);
+  }
+
+
   @Get(':id')
   @ApiOperation({ summary: 'Récupérer un document par ID' })
   @ApiParam({ name: 'id', description: 'ID du document' })
@@ -123,6 +138,16 @@ export class DocumentsController {
   update(@Param('id') id: string, @Body() updateDocumentDto: UpdateDocumentDto) {
     return this.documentsService.update(+id, updateDocumentDto);
   }
+
+  @Get('agence/:agence_id')
+  @ApiOperation({ summary: 'Récupérer tous les documents d\'une agence' })
+  @ApiParam({ name: 'agence_id', description: 'ID de l\'agence' })
+  @ApiResponse({ status: 200, description: 'Liste des documents récupérée' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  findByAgenceId(@Param('agence_id') agence_id: string) {
+    return this.documentsService.findByAgenceId(+agence_id);
+  }
+
 
   @Delete(':id')
   @ApiOperation({ summary: 'Supprimer un document' })

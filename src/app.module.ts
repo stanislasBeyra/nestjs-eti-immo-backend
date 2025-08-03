@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
@@ -26,6 +26,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ValidationPipe } from './common/pipes/validation.pipe';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingModule } from './common/modules/logging.module';
+import { CorsMiddleware } from './common/middleware/cors.middleware';
 
 @Module({
   imports: [
@@ -88,7 +89,13 @@ import { LoggingModule } from './common/modules/logging.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(CorsMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}
 
 
 

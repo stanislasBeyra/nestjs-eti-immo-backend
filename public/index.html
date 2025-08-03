@@ -3,418 +3,379 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ETI Immo - Gestion Immobilière</title>
+  <title>ETI Immo API - Documentation</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+  
+  <!-- MDB CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.1.0/mdb.min.css" rel="stylesheet">
+  
   <!-- Font Awesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-  <!-- Google Fonts -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet">
-  <!-- MDB -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.0/mdb.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
   <style>
-    body {
-      background: linear-gradient(135deg, #f8f9fa 0%, #edf2f7 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: 'Roboto', sans-serif;
+    .gradient-custom {
+      background: linear-gradient(135deg, #27ae60 0%, #2b931b 100%);
     }
-    
-    .container {
-      padding: 20px;
-    }
-    
-    .card {
-      border-radius: 15px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
-      overflow: hidden;
-    }
-    
-    .card-header {
-      background: linear-gradient(45deg, #1a237e, #0d47a1);
-      padding: 2.5rem 1rem;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .card-header:before {
-      content: "";
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      top: -100px;
-      right: -100px;
-    }
-    
-    .card-header:after {
-      content: "";
-      position: absolute;
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      bottom: -70px;
-      left: -70px;
-    }
-    
-    .card-header h1 {
-      font-weight: 700;
-      color: white;
-      margin-bottom: 0;
-      position: relative;
-      z-index: 2;
-    }
-    
-    .message-text {
-      font-size: 1.2rem;
-      font-weight: 300;
-      color: rgba(255, 255, 255, 0.9);
-      margin-bottom: 0;
-      position: relative;
-      z-index: 2;
-    }
-    
-    .card-body {
-      padding: 2rem;
-    }
-    
-    .btn-floating {
-      width: 50px;
-      height: 50px;
-    }
-    
-    .btn-primary {
-      background-color: #1a237e;
-    }
-    
-    .btn-primary:hover {
-      background-color: #0d47a1;
-    }
-    
-    .btn-secondary {
-      background-color: #0d47a1;
-    }
-    
-    .btn-secondary:hover {
-      background-color: #1565c0;
-    }
-    
-    .info-section {
-      background-color: #f5f7ff;
-      border-radius: 10px;
-      padding: 25px;
-      margin-top: 30px;
-      transition: all 0.3s ease;
-    }
-    
-    .info-section:hover {
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    .card-hover:hover {
       transform: translateY(-5px);
+      transition: transform 0.3s ease;
     }
-    
-    .info-header {
-      color: #5e35b1;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    .info-header i {
-      margin-right: 10px;
-    }
-    
-   
-    
-    .btn-floating i {
-      line-height: 50px;
-    }
-    
-    .badge-api {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      z-index: 3;
-    }
-    
-    .pulse {
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-      100% {
-        transform: scale(1);
-      }
-    }
-    
-    .fade-in {
-      animation: fadeIn 1s;
-    }
-    
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .button-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin: 25px 0;
-    }
-    
-    @media (max-width: 576px) {
-      .container {
-        padding: 0rem;
-      }
-
-      .card {
-      border-radius: 0px;
-      box-shadow: 0 0px 0px rgba(0, 0, 0, 0.12), 0 0px 0px rgba(0, 0, 0, 0.06);
-      
-    }
-      .card-header {
-        padding: 1.5rem 1rem;
-      }
-      
-      .card-body {
-        padding: 1.5rem;
-      }
-      
-      .info-item {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      
-      .info-item i {
-        margin-bottom: 5px;
-      }
-      
-      .info-item strong {
-        min-width: auto;
-        margin-bottom: 5px;
-      }
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card fade-in">
-      <div class="card-header text-center">
-        <span class="badge rounded-pill bg-light text-dark badge-api pulse">API</span>
-        <h1 class="display-5 mb-2">
-          <i class="fas fa-building me-2"></i>ETI Immo API
-        </h1>
-        <p class="message-text">Solution complète de gestion immobilière pour professionnels et particuliers</p>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark gradient-custom">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="#">
+        <i class="fas fa-building me-2"></i>
+        ETI Immo API
+      </a>
+      <button class="navbar-toggler" type="button" data-mdb-toggle="collapse" data-mdb-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#features">Fonctionnalités</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#modules">Modules</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#architecture">Architecture</a>
+          </li>
+        </ul>
       </div>
-      
-      <div class="card-body">
-        <div class="row justify-content-center">
-          <div class="col-md-10">
-            <div class="button-container">
-              <a href="/api/docs" class="btn btn-primary text-white btn-lg btn-rounded shadow-0 d-flex align-items-center">
-                <i class="fas fa-file-code me-2"></i>Documentation
-              </a>
-              <a href="/api" class="btn btn-secondary text-white btn-lg btn-rounded shadow-0 d-flex align-items-center">
-                <i class="fas fa-terminal me-2"></i>API Endpoints
-              </a>
-              <button onclick="downloadSwaggerJson()" class="btn btn-success text-white btn-lg btn-rounded shadow-0 d-flex align-items-center">
-                <i class="fas fa-download me-2"></i>Télécharger la documentation en JSON
-              </button>
+  </nav>
+
+  <!-- Hero Section -->
+  <div class="gradient-custom text-white py-5">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-8">
+          <h1 class="display-4 fw-bold mb-4">
+            API de Gestion Immobilière
+          </h1>
+          <p class="lead mb-4">
+            Une API complète et moderne pour la gestion immobilière avec authentification, 
+            gestion des propriétés, réservations et système de fichiers intégré.
+          </p>
+          <div class="d-flex gap-3 flex-wrap">
+            <a href="/api/docs" class="btn btn-light btn-lg">
+              <i class="fas fa-book me-2"></i>
+              Documentation Swagger
+            </a>
+            <button onclick="downloadSwaggerJson()" class="btn btn-outline-light btn-lg">
+              <i class="fas fa-download me-2"></i>
+              Télécharger JSON
+            </button>
+          </div>
+        </div>
+        <div class="col-lg-4 text-center">
+          <i class="fas fa-home" style="font-size: 8rem; opacity: 0.8;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <section id="features" class="py-5">
+    <div class="container">
+      <h2 class="text-center mb-5">Fonctionnalités Principales</h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card h-100 card-hover text-center">
+            <div class="card-body">
+              <i class="fas fa-shield-alt text-primary feature-icon"></i>
+              <h5 class="card-title">Authentification Sécurisée</h5>
+              <p class="card-text">Système d'authentification JWT avec gestion des sessions et protection des routes sensibles.</p>
             </div>
-            
-            <div class="text-center my-4">
-              <div class="d-flex justify-content-center">
-                <button type="button" class="btn btn-floating btn-primary mx-1">
-                  <i class="fab fa-github"></i>
-                </button>
-                <button type="button" class="btn btn-floating btn-primary mx-1">
-                  <i class="fas fa-code"></i>
-                </button>
-                <button type="button" class="btn btn-floating btn-primary mx-1">
-                  <i class="fas fa-search"></i>
-                </button>
-              </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 card-hover text-center">
+            <div class="card-body">
+              <i class="fas fa-building text-success feature-icon"></i>
+              <h5 class="card-title">Gestion des Propriétés</h5>
+              <p class="card-text">CRUD complet pour les propriétés avec gestion des types, statuts et informations détaillées.</p>
             </div>
-            
-            <div class="info-section">
-              <h4 class="info-header">
-                <i class="fas fa-info-circle"></i>Informations
-              </h4>
-              
-              <div class="info-item">
-                <i class="fas fa-tag"></i>
-                <strong>Nom:</strong>
-                <span>ETI Immo API</span>
-              </div>
-              
-              <div class="info-item">
-                <i class="fas fa-comment-alt"></i>
-                <strong>Description:</strong>
-                <span>Une API complète pour la gestion immobilière : locations, ventes, gestion des biens et des clients</span>
-              </div>
-              
-              <div class="info-item">
-                <i class="fas fa-file-alt"></i>
-                <strong>Documentation:</strong>
-                <a href="/api/docs" class="d-flex align-items-center">
-                  /api/docs
-                  <i class="fas fa-external-link-alt ms-2" style="font-size: 0.8rem;"></i>
-                </a>
-              </div>
-              
-              <div class="info-item">
-                <i class="fas fa-network-wired"></i>
-                <strong>Endpoints:</strong>
-                <a href="/api" class="d-flex align-items-center">
-                  /api
-                  <i class="fas fa-external-link-alt ms-2" style="font-size: 0.8rem;"></i>
-                </a>
-              </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 card-hover text-center">
+            <div class="card-body">
+              <i class="fas fa-calendar-check text-warning feature-icon"></i>
+              <h5 class="card-title">Système de Réservation</h5>
+              <p class="card-text">Gestion des réservations avec validation des disponibilités et suivi des statuts.</p>
             </div>
-            
-            <div class="alert alert-info mt-4 d-flex align-items-center" role="alert">
-              <i class="fas fa-lightbulb me-2"></i>
-              <div>
-                Découvrez notre API complète pour gérer efficacement votre portefeuille immobilier.
-              </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 card-hover text-center">
+            <div class="card-body">
+              <i class="fas fa-upload text-info feature-icon"></i>
+              <h5 class="card-title">Gestion de Fichiers</h5>
+              <p class="card-text">Upload et gestion des images de propriétés avec stockage sécurisé et optimisation.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 card-hover text-center">
+            <div class="card-body">
+              <i class="fas fa-chart-bar text-danger feature-icon"></i>
+              <h5 class="card-title">Dashboard Analytique</h5>
+              <p class="card-text">Statistiques et métriques en temps réel pour le suivi des activités immobilières.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 card-hover text-center">
+            <div class="card-body">
+              <i class="fas fa-file-alt text-secondary feature-icon"></i>
+              <h5 class="card-title">Documentation API</h5>
+              <p class="card-text">Documentation interactive Swagger/OpenAPI pour faciliter l'intégration et les tests.</p>
             </div>
           </div>
         </div>
       </div>
-      
-      <div class="card-footer text-center py-3">
-        <small class="text-muted">© 2024 ETI Immo - Tous droits réservés</small>
+    </div>
+  </section>
+
+  <!-- Modules Section -->
+  <section id="modules" class="py-5 bg-light">
+    <div class="container">
+      <h2 class="text-center mb-5">Modules Disponibles</h2>
+      <div class="row g-4">
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-users text-primary mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Users</h6>
+              <small class="text-muted">Gestion des utilisateurs</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-key text-success mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Auth</h6>
+              <small class="text-muted">Authentification</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-building text-warning mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Properties</h6>
+              <small class="text-muted">Gestion des propriétés</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-calendar-alt text-info mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Reservations</h6>
+              <small class="text-muted">Système de réservation</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-image text-danger mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Files</h6>
+              <small class="text-muted">Gestion des fichiers</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-chart-line text-secondary mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Dashboard</h6>
+              <small class="text-muted">Statistiques et métriques</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-tags text-success mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Categories</h6>
+              <small class="text-muted">Catégorisation</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="card card-hover">
+            <div class="card-body text-center">
+              <i class="fas fa-cog text-warning mb-3" style="font-size: 2rem;"></i>
+              <h6 class="card-title">Settings</h6>
+              <small class="text-muted">Configuration système</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Architecture Section -->
+  <section id="architecture" class="py-5">
+    <div class="container">
+      <h2 class="text-center mb-5">Architecture & Technologies</h2>
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h4>Stack Technologique</h4>
+          <ul class="list-unstyled">
+            <li class="mb-3">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Framework :</strong> NestJS avec TypeScript
+            </li>
+            <li class="mb-3">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Base de données :</strong> MySQL avec TypeORM
+            </li>
+            <li class="mb-3">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Authentification :</strong> JWT avec Passport
+            </li>
+            <li class="mb-3">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Validation :</strong> class-validator et class-transformer
+            </li>
+            <li class="mb-3">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Documentation :</strong> Swagger/OpenAPI
+            </li>
+            <li class="mb-3">
+              <i class="fas fa-check text-success me-2"></i>
+              <strong>Déploiement :</strong> Vercel
+            </li>
+          </ul>
+        </div>
+        <div class="col-lg-6 text-center">
+          <i class="fas fa-server" style="font-size: 10rem; color: #1a237e; opacity: 0.3;"></i>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Info Section -->
+  <section class="py-5 bg-light">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6">
+          <h4>Informations API</h4>
+          <div class="card">
+            <div class="card-body">
+              <p><strong>Version:</strong> 1.0.0</p>
+              <p><strong>Framework:</strong> NestJS</p>
+              <p><strong>Base de données:</strong> MySQL/TypeORM</p>
+              <p><strong>Documentation:</strong> Swagger/OpenAPI</p>
+              <p><strong>Authentification:</strong> JWT</p>
+              <p><strong>Upload:</strong> Multer</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <h4>Endpoints Principaux</h4>
+          <div class="card">
+            <div class="card-body">
+              <p><code>POST /auth/login</code> - Connexion</p>
+              <p><code>GET /users</code> - Liste des utilisateurs</p>
+              <p><code>GET /properties</code> - Liste des propriétés</p>
+              <p><code>POST /reservations</code> - Créer une réservation</p>
+              <p><code>POST /upload</code> - Upload de fichiers</p>
+              <p><code>GET /api</code> - Documentation Swagger</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="gradient-custom text-white text-center py-4">
+    <div class="container">
+      <p class="mb-0">
+        <i class="fas fa-code me-2"></i>
+        ETI Immo API - Développé avec NestJS et TypeORM
+      </p>
+    </div>
+  </footer>
+
+  <!-- MDB JavaScript -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.1.0/mdb.umd.min.js"></script>
   
-  <!-- MDB JS -->
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.0/mdb.min.js"></script>
   <script>
-    // Animation des éléments au chargement
-    document.addEventListener('DOMContentLoaded', () => {
-      const infoSection = document.querySelector('.info-section');
-      const buttons = document.querySelectorAll('.btn-lg');
-      
-      setTimeout(() => {
-        infoSection.classList.add('fade-in');
-      }, 300);
-      
-      buttons.forEach((button, index) => {
-        setTimeout(() => {
-          button.classList.add('fade-in');
-        }, 150 * (index + 1));
+    // Fonction pour télécharger la documentation Swagger en JSON
+    function downloadSwaggerJson() {
+      fetch('/api-json')
+        .then(response => response.json())
+        .then(data => {
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'eti-immo-api-swagger.json';
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        })
+        .catch(error => {
+          console.error('Erreur lors du téléchargement:', error);
+          alert('Erreur lors du téléchargement de la documentation');
+        });
+    }
+
+    // Animation au scroll
+    document.addEventListener('DOMContentLoaded', function() {
+      // Smooth scrolling pour les liens d'ancrage
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Animation des cartes au scroll
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(card);
       });
     });
-
-    async function downloadSwaggerJson() {
-      try {
-        const response = await fetch('/api/docs-json');
-        if (!response.ok) {
-          throw new Error('Erreur lors du téléchargement');
-        }
-        const data = await response.json();
-        
-        // Ajouter l'URL de base dans la documentation
-        const baseUrl = window.location.origin;
-        data.servers = [
-          {
-            url: baseUrl,
-            description: 'Serveur de production'
-          },
-          {
-            url: 'http://localhost:3000',
-            description: 'Serveur de développement local'
-          }
-        ];
-
-        // Ajouter des informations supplémentaires
-        data.info = {
-          ...data.info,
-          'x-baseUrl': baseUrl,
-          'x-downloadDate': new Date().toISOString(),
-          'x-environment': window.location.hostname === 'localhost' ? 'development' : 'production'
-        };
-        
-        // Créer un blob avec les données JSON
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        
-        // Créer un lien de téléchargement avec un nom de fichier plus descriptif
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const date = new Date().toISOString().split('T')[0];
-        a.download = `swagger-documentation-${date}.json`;
-        
-        // Déclencher le téléchargement
-        document.body.appendChild(a);
-        a.click();
-        
-        // Nettoyer
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        // Afficher une notification de succès
-        const toast = document.createElement('div');
-        toast.className = 'position-fixed bottom-0 end-0 p-3';
-        toast.style.zIndex = '5';
-        toast.innerHTML = `
-          <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-success text-white">
-              <i class="fas fa-check-circle me-2"></i>
-              <strong class="me-auto">Succès</strong>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-              Documentation téléchargée avec succès !<br>
-              <small>URL de base: ${baseUrl}</small>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-          toast.remove();
-        }, 5000); // Augmenté à 5 secondes pour avoir le temps de lire l'URL
-      } catch (error) {
-        // Afficher une notification d'erreur
-        const toast = document.createElement('div');
-        toast.className = 'position-fixed bottom-0 end-0 p-3';
-        toast.style.zIndex = '5';
-        toast.innerHTML = `
-          <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-danger text-white">
-              <i class="fas fa-exclamation-circle me-2"></i>
-              <strong class="me-auto">Erreur</strong>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-              Erreur lors du téléchargement : ${error.message}
-            </div>
-          </div>
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-          toast.remove();
-        }, 3000);
-      }
-    }
   </script>
 </body>
 </html>

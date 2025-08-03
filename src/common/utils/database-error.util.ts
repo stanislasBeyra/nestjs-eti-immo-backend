@@ -31,8 +31,8 @@ export class DatabaseErrorUtil {
     if (errorMessage.includes('foreign key constraint')) {
       return {
         type: 'foreign_key',
-        message: 'Impossible de supprimer cet élément car il est référencé ailleurs',
-        details: 'Veuillez d\'abord supprimer les éléments associés'
+        message: 'Erreur de clé étrangère : une référence est invalide (ex : proprietaire_id, agence_id, etc.)',
+        details: errorMessage
       };
     }
     

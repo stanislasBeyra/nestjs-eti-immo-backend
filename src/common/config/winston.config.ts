@@ -1,9 +1,4 @@
 import * as winston from 'winston';
-import * as DailyRotateFile from 'winston-daily-rotate-file';
-import { join } from 'path';
-
-// Créer le dossier logs s'il n'existe pas
-const logsDir = join(process.cwd(), 'logs');
 
 // Configuration des formats
 const logFormat = winston.format.combine(
@@ -29,7 +24,7 @@ const logFormat = winston.format.combine(
 
 // Configuration des transports
 const transports: winston.transport[] = [
-  // Console transport (pour le développement)
+  // Console transport (pour tous les environnements)
   new winston.transports.Console({
     format: winston.format.combine(
       winston.format.colorize(),
@@ -51,74 +46,6 @@ const transports: winston.transport[] = [
   })
 ];
 
-// Transport pour les logs généraux
-const generalTransport = new DailyRotateFile({
-  filename: join(logsDir, 'application-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '14d',
-  level: 'info'
-});
-
-// Transport pour les erreurs
-const errorTransport = new DailyRotateFile({
-  filename: join(logsDir, 'error-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '30d',
-  level: 'error'
-});
-
-// Transport pour les logs de débogage
-const debugTransport = new DailyRotateFile({
-  filename: join(logsDir, 'debug-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '7d',
-  level: 'debug'
-});
-
-// Transport pour les logs d'accès HTTP
-const accessTransport = new DailyRotateFile({
-  filename: join(logsDir, 'access-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '14d',
-  level: 'info'
-});
-
-// Transport pour les logs de base de données
-const databaseTransport = new DailyRotateFile({
-  filename: join(logsDir, 'database-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '14d',
-  level: 'info'
-});
-
-// Transport pour les logs de sécurité
-const securityTransport = new DailyRotateFile({
-  filename: join(logsDir, 'security-%DATE%.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '30d',
-  level: 'warn'
-});
-
-// Ajouter les transports selon l'environnement
-if (process.env.NODE_ENV === 'production') {
-  transports.push(generalTransport, errorTransport, accessTransport, databaseTransport, securityTransport);
-} else {
-  // En développement, on garde aussi les fichiers pour le débogage
-  transports.push(generalTransport, errorTransport, debugTransport, accessTransport, databaseTransport, securityTransport);
-}
-
 // Configuration principale du logger
 export const winstonConfig = {
   level: process.env.LOG_LEVEL || 'info',
@@ -136,31 +63,27 @@ export const createLogger = (category: string) => {
   });
 };
 
-// Loggers spécialisés
+// Loggers spécialisés (console uniquement)
 export const logger = winston.createLogger(winstonConfig);
 
 export const accessLogger = winston.createLogger({
   ...winstonConfig,
-  defaultMeta: { category: 'access' },
-  transports: [accessTransport, new winston.transports.Console()]
+  defaultMeta: { category: 'access' }
 });
 
 export const databaseLogger = winston.createLogger({
   ...winstonConfig,
-  defaultMeta: { category: 'database' },
-  transports: [databaseTransport, new winston.transports.Console()]
+  defaultMeta: { category: 'database' }
 });
 
 export const securityLogger = winston.createLogger({
   ...winstonConfig,
-  defaultMeta: { category: 'security' },
-  transports: [securityTransport, new winston.transports.Console()]
+  defaultMeta: { category: 'security' }
 });
 
 export const errorLogger = winston.createLogger({
   ...winstonConfig,
-  defaultMeta: { category: 'error' },
-  transports: [errorTransport, new winston.transports.Console()]
+  defaultMeta: { category: 'error' }
 });
 
 // Fonctions utilitaires pour les logs

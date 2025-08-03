@@ -1,11 +1,12 @@
-import { IsString, IsEmail, IsOptional, IsDate, IsInt, Min, Max, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsDate, IsInt, Min, Max, MinLength, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateLocataireDto {
-  @ApiProperty({ description: 'ID de l\'agence associée au locataire', minimum: 1 })
+  @ApiProperty({ description: "ID de l'agence associée au locataire (automatique, ne pas renseigner)", required: false })
+  @IsOptional()
   @IsInt()
   @Min(1)
-  agence_id: number;
+  agence_id?: number;
 
   @ApiProperty({ description: 'Prénom du locataire' })
   @IsString()
@@ -25,7 +26,7 @@ export class CreateLocataireDto {
 
   @ApiProperty({ description: 'Date de naissance du locataire', required: false })
   @IsOptional()
-  @IsDate()
+  @IsDateString()
   bithday?: Date;
 
   @ApiProperty({ description: 'Numéro CNI du locataire', required: false })

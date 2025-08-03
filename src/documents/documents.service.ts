@@ -42,6 +42,13 @@ export class DocumentsService {
     return document;
   }
 
+  async findByAgenceId(agence_id: number) {
+    return await this.documentsRepository.find({
+      where: { agence_id, deleted_at: IsNull() },
+      relations: ['agence'],
+    });
+  }
+
   async update(id: number, updateDocumentDto: UpdateDocumentDto) {
     const document = await this.findOne(id);
     Object.assign(document, updateDocumentDto);

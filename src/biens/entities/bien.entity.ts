@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Agence } from '../../agence/entities/agence.entity';
 import { Proprietaire } from '../../proprietaires/entities/proprietaire.entity';
@@ -29,228 +30,149 @@ export enum PropertyStatus {
 
 @Entity('biens')
 export class Bien {
+  @ApiProperty()
   @PrimaryGeneratedColumn({ type: 'bigint', comment: 'Identifiant unique du bien' })
   id: number;
 
-  @Column({ 
-    type: 'bigint', 
-    comment: 'ID de l\'agence qui gère le bien' 
-  })
+  @ApiProperty()
+  @Column({ type: 'bigint', comment: 'ID de l\'agence qui gère le bien' })
   agence_id: number;
 
-  @Column({ 
-    type: 'bigint', 
-    comment: 'ID du propriétaire du bien' 
-  })
+  @ApiProperty()
+  @Column({ type: 'bigint', comment: 'ID du propriétaire du bien' })
   proprietaire_id: number;
 
-  @Column({ 
-    length: 255, 
-    comment: 'Titre du bien' 
-  })
+  @ApiProperty()
+  @Column({ length: 255, comment: 'Titre du bien' })
   title: string;
 
-  @Column({ 
-    length: 255, 
-    nullable: true, 
-    comment: 'Référence unique du bien' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ length: 255, nullable: true, comment: 'Référence unique du bien' })
   reference: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: PropertyCategorie, 
-    comment: 'Catégorie du bien (Maison, Résidence, Terrain)' 
-  })
+  @ApiProperty({ enum: PropertyCategorie })
+  @Column({ type: 'enum', enum: PropertyCategorie, comment: 'Catégorie du bien (Maison, Résidence, Terrain)' })
   categorie: PropertyCategorie;
 
-  @Column({ 
-    type: 'enum', 
-    enum: PropertyType, 
-    nullable: true, 
-    comment: 'Type/nombre de pièces du bien' 
-  })
+  @ApiProperty({ enum: PropertyType, required: false })
+  @Column({ type: 'enum', enum: PropertyType, nullable: true, comment: 'Type/nombre de pièces du bien' })
   type: PropertyType;
 
-  @Column({ 
-    type: 'enum', 
-    enum: PropertyStatus, 
-    default: PropertyStatus.DISPONIBLE, 
-    comment: 'Statut actuel du bien' 
-  })
+  @ApiProperty({ enum: PropertyStatus })
+  @Column({ type: 'enum', enum: PropertyStatus, default: PropertyStatus.DISPONIBLE, comment: 'Statut actuel du bien' })
   status: PropertyStatus;
 
-  @Column({ 
-    type: 'text', 
-    nullable: true, 
-    comment: 'Description détaillée du bien' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'text', nullable: true, comment: 'Description détaillée du bien' })
   description: string;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 10, 
-    scale: 2, 
-    nullable: true, 
-    comment: 'Surface en mètres carrés' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, comment: 'Surface en mètres carrés' })
   superficie: number;
 
-  @Column({ 
-    type: 'int', 
-    nullable: true, 
-    comment: 'Nombre total de pièces' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'int', nullable: true, comment: 'Nombre total de pièces' })
   pieces: number;
 
-  @Column({ 
-    type: 'int', 
-    nullable: true, 
-    comment: 'Nombre de chambres' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'int', nullable: true, comment: 'Nombre de chambres' })
   bedrooms: number;
 
-  @Column({ 
-    type: 'int', 
-    nullable: true, 
-    comment: 'Nombre de salles de bain' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'int', nullable: true, comment: 'Nombre de salles de bain' })
   bathrooms: number;
 
-  @Column({ 
-    type: 'int', 
-    nullable: true, 
-    comment: 'Étage du bien' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'int', nullable: true, comment: 'Étage du bien' })
   floor: number;
 
-  @Column({ 
-    type: 'int', 
-    nullable: true, 
-    comment: 'Nombre de places de stationnement' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'int', nullable: true, comment: 'Nombre de places de stationnement' })
   garages: number;
 
-  @Column({ 
-    type: 'json', 
-    nullable: true, 
-    comment: 'Liste des équipements disponibles' 
-  })
+  @ApiProperty({ type: [String], required: false })
+  @Column({ type: 'json', nullable: true, comment: 'Liste des équipements disponibles' })
   amenities: string[];
 
-  @Column({ 
-    length: 255, 
-    comment: 'Adresse complète du bien' 
-  })
+  @ApiProperty()
+  @Column({ length: 255, comment: 'Adresse complète du bien' })
   address: string;
 
-  @Column({ 
-    length: 255, 
-    comment: 'Commune ou quartier principal' 
-  })
+  @ApiProperty()
+  @Column({ length: 255, comment: 'Commune ou quartier principal' })
   localite: string;
 
-  @Column({ 
-    length: 255, 
-    nullable: true, 
-    comment: 'Sous-quartier ou zone spécifique' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ length: 255, nullable: true, comment: 'Sous-quartier ou zone spécifique' })
   area: string;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 2, 
-    comment: 'Loyer mensuel en FCFA' 
-  })
+  @ApiProperty()
+  @Column({ type: 'decimal', precision: 18, scale: 2, comment: 'Loyer mensuel en FCFA' })
   loyer: number;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 2, 
-    nullable: true, 
-    comment: 'Montant de la caution en FCFA' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true, comment: 'Montant de la caution en FCFA' })
   deposit: number;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 2, 
-    nullable: true, 
-    comment: 'Charges mensuelles en FCFA' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true, comment: 'Charges mensuelles en FCFA' })
   charges: number;
 
-  @Column({ 
-    type: 'decimal', 
-    precision: 18, 
-    scale: 2, 
-    nullable: true, 
-    comment: 'Frais d\'agence en FCFA' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true, comment: 'Frais d\'agence en FCFA' })
   agency_fees: number;
 
-  @Column({ 
-    length: 255, 
-    nullable: true, 
-    comment: 'Chemin vers l\'image principale' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ length: 255, nullable: true, comment: 'Chemin vers l\'image principale' })
   main_image: string;
 
-  @Column({ 
-    length: 255, 
-    nullable: true, 
-    comment: 'Chemin vers le document de titre de propriété' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ length: 255, nullable: true, comment: 'Chemin vers le document de titre de propriété' })
   property_title_doc: string;
 
-  @Column({ 
-    length: 255, 
-    nullable: true, 
-    comment: 'Chemin vers le contrat de bail' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ length: 255, nullable: true, comment: 'Chemin vers le contrat de bail' })
   lease_doc: string;
 
-  @Column({ 
-    length: 255, 
-    nullable: true, 
-    comment: 'Chemin vers l\'état des lieux' 
-  })
+  @ApiProperty({ required: false })
+  @Column({ length: 255, nullable: true, comment: 'Chemin vers l\'état des lieux' })
   condition_doc: string;
 
-  @Column({ 
-    type: 'json', 
-    nullable: true, 
-    comment: 'Liste des chemins vers les documents additionnels' 
-  })
+  @ApiProperty({ type: [String], required: false })
+  @Column({ type: 'json', nullable: true, comment: 'Liste des chemins vers les documents additionnels' })
   other_docs: string[];
 
+  @ApiProperty()
   @CreateDateColumn({ comment: 'Date de création du bien' })
   created_at: Date;
 
+  @ApiProperty()
   @UpdateDateColumn({ comment: 'Date de dernière mise à jour' })
   updated_at: Date;
 
+  @ApiProperty({ required: false })
   @DeleteDateColumn({ comment: 'Date de suppression (soft delete)' })
   deleted_at: Date;
 
-  // Relations
+  @ApiProperty({ type: () => Agence })
   @ManyToOne(() => Agence, agence => agence.properties)
   @JoinColumn({ name: 'agence_id' })
   agence: Agence;
 
+  @ApiProperty({ type: () => Proprietaire })
   @ManyToOne(() => Proprietaire, proprietaire => proprietaire.properties)
   @JoinColumn({ name: 'proprietaire_id' })
   proprietaire: Proprietaire;
 
+  @ApiProperty({ type: () => [BiensImage] })
   @OneToMany(() => BiensImage, image => image.bien)
   images: BiensImage[];
 
+  @ApiProperty({ type: () => [Location] })
   @OneToMany(() => Location, location => location.bien)
   locations: Location[];
 
+  @ApiProperty({ type: () => [Paiement] })
   @OneToMany(() => Paiement, paiement => paiement.property)
   paiements: Paiement[];
 }

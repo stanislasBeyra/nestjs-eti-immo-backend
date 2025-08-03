@@ -4,7 +4,7 @@ import { Locataire } from 'src/locataire/entities/locataire.entity';
 import { Agence } from '../../agence/entities/agence.entity';
 import { User } from '../../users/entities/user.entity';
 import { Paiement } from '../../paiement/entities/paiement.entity';
-import { Bien } from '../../biens/entities/biens.entity';
+import { Bien } from '../../biens/entities/bien.entity';
 
 export enum NotificationType {
   PAIEMENT = 'PAIEMENT',

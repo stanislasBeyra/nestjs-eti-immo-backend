@@ -19,9 +19,16 @@
   "routes": [
     {
       "src": "/uploads/(.*)",
-      "dest": "/uploads/$1",
+      "dest": "/public/uploads/$1",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/tmp/(.*)",
+      "dest": "/tmp/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=3600"
       }
     },
     {

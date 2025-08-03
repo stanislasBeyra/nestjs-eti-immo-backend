@@ -229,7 +229,7 @@ export class AgenceService {
       }
       throw new BadRequestException('Erreur lors de la suppression de l\'agence: ' + error.message);
     }
-  }
+  } 
 
   async findByEmail(email: string) {
     try {
