@@ -57,9 +57,7 @@ export class DocumentsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: process.env.NODE_ENV === 'production' 
-          ? '/tmp/documents' 
-          :join(process.cwd(), 'public', 'uploads', 'documents'),
+        destination: join(process.cwd(), 'public', 'uploads', 'documents'),
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
@@ -88,9 +86,12 @@ export class DocumentsController {
 
      console.log('agence recuperer',agence)
 
+    // Créer le chemin relatif au lieu d'utiliser file.path
+    const relativePath = `uploads/documents/${file.filename}`;
+
     return this.documentsService.create({
       ...createDocumentDto,
-      file_path: file.path,
+      file_path: relativePath,
       agence_id: agence.id,
     });
   }
@@ -149,7 +150,7 @@ export class DocumentsController {
   }
 
 
-  @Delete(':id')
+  @Delete('deletedocumentbyid/:id')
   @ApiOperation({ summary: 'Supprimer un document' })
   @ApiParam({ name: 'id', description: 'ID du document' })
   @ApiResponse({ status: 200, description: 'Document supprimé' })
