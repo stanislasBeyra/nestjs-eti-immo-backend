@@ -116,8 +116,7 @@ async function bootstrap() {
     // Configuration CORS dynamique basée sur l'environnement
     const corsOrigins = process.env.NODE_ENV === 'production' 
       ? [
-          "https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app",
-          "https://gestion.partenairesmtn.ci",
+          "https://next-js-eti-immo-dashbord.vercel.app",
           /^https:\/\/.*\.vercel\.app$/,
         ]
       : [
@@ -127,8 +126,7 @@ async function bootstrap() {
           "http://localhost:3000",
           "http://192.168.100.5:3000",
           "http://192.168.35.15:3000",
-          "https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app",
-          "https://gestion.partenairesmtn.ci",
+          "https://next-js-eti-immo-dashbord.vercel.app",
         ];
 
     app.enableCors({
