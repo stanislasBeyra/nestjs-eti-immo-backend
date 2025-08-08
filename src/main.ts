@@ -120,7 +120,8 @@ async function bootstrap() {
         'http://192.168.1.59:3000',
         "http://localhost:3000",
         "http://192.168.100.5:3000",
-        "http://192.168.35.15:3000"
+        "http://192.168.35.15:3000",
+        "https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app",
       ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [
