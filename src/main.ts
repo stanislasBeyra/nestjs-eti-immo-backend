@@ -129,8 +129,17 @@ async function bootstrap() {
           "https://next-js-eti-immo-dashbord.vercel.app",
         ];
 
+    // Configuration CORS - Remplacer la configuration existante
     app.enableCors({
-      origin: corsOrigins,
+      origin: [
+        'https://next-js-eti-immo-dashbord.vercel.app',
+        'https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app',
+        'https://immo.partenairesmtn.ci',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        // Pattern pour tous les déploiements Vercel
+        /^https:\/\/.*\.vercel\.app$/,
+      ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [
         'Origin',
@@ -140,30 +149,57 @@ async function bootstrap() {
         'Authorization',
         'X-API-Key',
         'Cache-Control',
-        'Pragma',
-        'Access-Control-Allow-Origin',
-        'Access-Control-Allow-Methods',
-        'Access-Control-Allow-Headers'
+        'Pragma'
       ],
       credentials: true,
       preflightContinue: false,
-      optionsSuccessStatus: 200,
-      // Exposer explicitement les en-têtes pour les requêtes preflight
-      exposedHeaders: ['Authorization', 'Content-Type']
+      optionsSuccessStatus: 200
     });
 
-    // Gestion explicite des requêtes preflight OPTIONS
+    // Middleware CORS supplémentaire pour gérer les cas edge
+    // ===== CONFIGURATION CORS UNIQUE =====
     app.use((req, res, next) => {
-      if (req.method === 'OPTIONS') {
-        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-        res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-API-Key, Cache-Control, Pragma');
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Max-Age', '86400');
-        return res.sendStatus(200);
+      const origin = req.headers.origin;
+      
+      // Liste des origines autorisées
+      const allowedOrigins = [
+        'https://next-js-eti-immo-dashbord.vercel.app',
+        'https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app',
+        'https://immo.partenairesmtn.ci',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+      ];
+      
+      // Autoriser l'origine si elle est dans la liste ou si c'est un domaine Vercel
+      if (!origin || allowedOrigins.includes(origin) || (origin && origin.includes('.vercel.app'))) {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        console.log(`✅ CORS - Origin autorisée: ${origin}`);
+      } else {
+        console.log(`❌ CORS - Origin refusée: ${origin}`);
       }
+      
+      // En-têtes CORS obligatoires
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-API-Key, Cache-Control, Pragma');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      
+      // Gérer les requêtes preflight OPTIONS
+      if (req.method === 'OPTIONS') {
+        console.log(`🚀 CORS - Preflight pour: ${req.url}`);
+        return res.status(200).end();
+      }
+      
       next();
     });
+
+    // Configuration CORS NestJS simple
+    app.enableCors({
+      origin: true,
+      credentials: true,
+      optionsSuccessStatus: 200
+    });
+    // ===== FIN CONFIGURATION CORS =====
 
     // Middleware de débogage CORS (uniquement en développement)
     if (process.env.NODE_ENV !== 'production') {
