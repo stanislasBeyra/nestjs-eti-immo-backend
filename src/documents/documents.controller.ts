@@ -149,7 +149,6 @@ export class DocumentsController {
     return this.documentsService.findByAgenceId(+agence_id);
   }
 
-
   @Delete('deletedocumentbyid/:id')
   @ApiOperation({ summary: 'Supprimer un document' })
   @ApiParam({ name: 'id', description: 'ID du document' })
