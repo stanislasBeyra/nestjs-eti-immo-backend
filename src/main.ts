@@ -113,16 +113,26 @@ async function bootstrap() {
     });
 
     // Configuration CORS
+    // Configuration CORS dynamique basée sur l'environnement
+    const corsOrigins = process.env.NODE_ENV === 'production' 
+      ? [
+          "https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app",
+          "https://gestion.partenairesmtn.ci",
+          /^https:\/\/.*\.vercel\.app$/,
+        ]
+      : [
+          'http://192.168.2.102:3000',
+          "http://192.168.249.15:3000",
+          'http://192.168.1.59:3000',
+          "http://localhost:3000",
+          "http://192.168.100.5:3000",
+          "http://192.168.35.15:3000",
+          "https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app",
+          "https://gestion.partenairesmtn.ci",
+        ];
+
     app.enableCors({
-      origin: [
-        'http://192.168.2.102:3000',
-        "http://192.168.249.15:3000",
-        'http://192.168.1.59:3000',
-        "http://localhost:3000",
-        "http://192.168.100.5:3000",
-        "http://192.168.35.15:3000",
-        "https://next-js-eti-immo-dashbord-85oq46mvc-beyradevs-projects.vercel.app",
-      ],
+      origin: corsOrigins,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [
         'Origin',
@@ -132,12 +142,38 @@ async function bootstrap() {
         'Authorization',
         'X-API-Key',
         'Cache-Control',
-        'Pragma'
+        'Pragma',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Methods',
+        'Access-Control-Allow-Headers'
       ],
       credentials: true,
       preflightContinue: false,
-      optionsSuccessStatus: 200
+      optionsSuccessStatus: 200,
+      // Exposer explicitement les en-têtes pour les requêtes preflight
+      exposedHeaders: ['Authorization', 'Content-Type']
     });
+
+    // Gestion explicite des requêtes preflight OPTIONS
+    app.use((req, res, next) => {
+      if (req.method === 'OPTIONS') {
+        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-API-Key, Cache-Control, Pragma');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Max-Age', '86400');
+        return res.sendStatus(200);
+      }
+      next();
+    });
+
+    // Middleware de débogage CORS (uniquement en développement)
+    if (process.env.NODE_ENV !== 'production') {
+      app.use((req, res, next) => {
+        console.log(`CORS Debug - Origin: ${req.headers.origin}, Méthode: ${req.method}, URL: ${req.url}`);
+        next();
+      });
+    }
 
     // Ajoute cette ligne pour exposer le JSON sur /api-json
     app.use('/api-json', (req, res) => {
