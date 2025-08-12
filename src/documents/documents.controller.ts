@@ -6,16 +6,17 @@ import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiConsumes, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
   ApiBody,
   ApiBearerAuth,
   ApiParam
 } from '@nestjs/swagger';
 import { AgenceService } from '../agence/agence.service';
+import { response } from 'express';
 
 @ApiTags('Documents')
 @ApiBearerAuth()
@@ -25,7 +26,7 @@ export class DocumentsController {
   constructor(
     private readonly documentsService: DocumentsService,
     private readonly agenceService: AgenceService,
-  ) {}
+  ) { }
 
   @Post('upload')
   @ApiOperation({ summary: 'Uploader un nouveau document' })
@@ -77,14 +78,14 @@ export class DocumentsController {
     @Body() createDocumentDto: CreateDocumentDto,
   ) {
     console.log('User from request:', req.user);
-    
+
     // Récupérer l'agence par email
     const agence = await this.agenceService.findByEmail(req.user?.email);
     if (!agence) {
       throw new BadRequestException('Aucune agence associée à cet utilisateur');
     }
 
-     console.log('agence recuperer',agence)
+    console.log('agence recuperer', agence)
 
     // Créer le chemin relatif au lieu d'utiliser file.path
     const relativePath = `uploads/documents/${file.filename}`;
@@ -114,7 +115,7 @@ export class DocumentsController {
     if (!agence) {
       throw new BadRequestException('Aucune agence associée à cet utilisateur');
     }
-    
+
     return this.documentsService.findByAgenceId(agence.id);
   }
 
@@ -147,6 +148,42 @@ export class DocumentsController {
   @ApiResponse({ status: 401, description: 'Non authentifié' })
   findByAgenceId(@Param('agence_id') agence_id: string) {
     return this.documentsService.findByAgenceId(+agence_id);
+  }
+
+  @Patch('validatedocument/:id')
+  @ApiOperation({ summary: 'Valider un document' })
+  @ApiParam({ name: 'id', description: 'ID du document' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'number',
+          description: 'Statut du document (2 = validé, 3 = refusé)',
+          enum: [2, 3]
+        }
+      },
+      required: ['status']
+    }
+  })
+  @ApiResponse({ status: 200, description: 'Document validé' })
+  @ApiResponse({ status: 404, description: 'Document non trouvé' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 400, description: 'Erreur de validation' })
+  async ValidatedDocument(
+    @Param('id') id: string,
+    @Body('status') status: number
+  ) {
+    try {
+      const response = await this.documentsService.ValidatedDocument(+id, status);
+      return {
+        message: 'Document validé avec succès',
+        data: response
+      };
+    } catch (error) {
+      // L'erreur sera automatiquement gérée par le filtre d'exception global
+      throw error;
+    }
   }
 
   @Delete('deletedocumentbyid/:id')
