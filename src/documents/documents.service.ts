@@ -55,11 +55,15 @@ export class DocumentsService {
     return await this.documentsRepository.save(document);
   }
 
-  async ValidatedDocument(id: number, status: number) {
+  async ValidatedDocument(id: number, status: number, validatedBy?: number) {
     try {
       // Validation des paramètres
       if (![2, 3].includes(status)) {
         throw new BadRequestException('Le statut doit être 2 (validé) ou 3 (refusé)');
+      }
+
+      if (!validatedBy) {
+        throw new BadRequestException('L\'ID de l\'administrateur est requis pour la validation');
       }
 
       const document = await this.findOne(id);
@@ -77,8 +81,11 @@ export class DocumentsService {
         throw new BadRequestException('Document déjà refusé');
       }
 
-      // Mise à jour du statut
+      // Mise à jour du statut avec traçabilité
       document.status = status;
+      document.validated_at = new Date();
+      document.validated_by = validatedBy;
+      
       const updatedDocument = await this.documentsRepository.save(document);
       
       return updatedDocument;

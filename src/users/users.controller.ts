@@ -48,6 +48,15 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @Get('admin/agences')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserCategorie.ADMIN)
+  @ApiOperation({ summary: 'Récupérer toutes les agences créées par l\'admin connecté' })
+  @ApiResponse({ status: 200, description: 'Liste des agences récupérée avec succès' })
+  async getAdminAgences(@GetCurrentUser() user: CurrentUser) {
+    return await this.usersService.getAdminAgences(user.id);
+  }
+
   @Get('getuserbyid/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserCategorie.ADMIN)

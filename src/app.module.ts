@@ -27,6 +27,7 @@ import { ValidationPipe } from './common/pipes/validation.pipe';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingModule } from './common/modules/logging.module';
 import { CorsMiddleware } from './common/middleware/cors.middleware';
+import { StatistiqueModule } from './statistique/statistique.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { CorsMiddleware } from './common/middleware/cors.middleware';
     PaiementModule,
     DocumentsModule,
     NotificationsModule,
+    StatistiqueModule,
   ],
   controllers: [AppController],
   providers: [

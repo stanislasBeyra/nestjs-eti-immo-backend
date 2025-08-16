@@ -216,7 +216,7 @@ async function bootstrap() {
     });
 
     // Configuration du port pour Vercel
-    const port = parseInt(process.env.PORT || '3000', 10);
+    const port = parseInt(process.env.PORT || '1206', 10);
     await app.listen(port, '0.0.0.0');
 
     const appUrl = await app.getUrl();

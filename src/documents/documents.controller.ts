@@ -172,10 +172,14 @@ export class DocumentsController {
   @ApiResponse({ status: 400, description: 'Erreur de validation' })
   async ValidatedDocument(
     @Param('id') id: string,
-    @Body('status') status: number
+    @Body('status') status: number,
+    @Request() req
   ) {
     try {
-      const response = await this.documentsService.ValidatedDocument(+id, status);
+      // Récupérer l'ID de l'utilisateur connecté depuis le token JWT
+      const adminId = req.user?.id || req.user?.sub;
+      
+      const response = await this.documentsService.ValidatedDocument(+id, status, adminId);
       return {
         message: 'Document validé avec succès',
         data: response
