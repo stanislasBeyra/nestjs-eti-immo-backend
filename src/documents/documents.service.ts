@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { CreateDocumentDto } from './dto/create-document.dto';
@@ -10,7 +10,7 @@ export class DocumentsService {
   constructor(
     @InjectRepository(AgencyDocument)
     private documentsRepository: Repository<AgencyDocument>,
-  ) {}
+  ) { }
 
   async create(createDocumentDto: CreateDocumentDto & { file_path: string; agence_id: number }) {
     try {
@@ -53,6 +53,51 @@ export class DocumentsService {
     const document = await this.findOne(id);
     Object.assign(document, updateDocumentDto);
     return await this.documentsRepository.save(document);
+  }
+
+  async ValidatedDocument(id: number, status: number, validatedBy?: number) {
+    try {
+      // Validation des paramètres
+      if (![2, 3].includes(status)) {
+        throw new BadRequestException('Le statut doit être 2 (validé) ou 3 (refusé)');
+      }
+
+      if (!validatedBy) {
+        throw new BadRequestException('L\'ID de l\'administrateur est requis pour la validation');
+      }
+
+      const document = await this.findOne(id);
+      
+      if (!document) {
+        throw new NotFoundException('Document non trouvé');
+      }
+
+      // Vérification du statut actuel
+      if (document.status === 2 && status === 2) {
+        throw new BadRequestException('Document déjà validé');
+      }
+      
+      if (document.status === 3 && status === 3) {
+        throw new BadRequestException('Document déjà refusé');
+      }
+
+      // Mise à jour du statut avec traçabilité
+      document.status = status;
+      document.validated_at = new Date();
+      document.validated_by = validatedBy;
+      
+      const updatedDocument = await this.documentsRepository.save(document);
+      
+      return updatedDocument;
+    } catch (error) {
+      // Re-lancer l'erreur si c'est déjà une HttpException
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      
+      // Sinon, créer une BadRequestException
+      throw new BadRequestException(`Erreur lors de la validation du document: ${error.message}`);
+    }
   }
 
   async remove(id: number) {

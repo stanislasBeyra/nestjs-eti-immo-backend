@@ -122,6 +122,7 @@ async function bootstrap() {
       : [
           'http://192.168.2.102:3000',
           "http://192.168.249.15:3000",
+          'http://192.168.100.5:3000',
           'http://192.168.1.59:3000',
           "http://localhost:3000",
           "http://192.168.100.5:3000",
@@ -216,7 +217,7 @@ async function bootstrap() {
     });
 
     // Configuration du port pour Vercel
-    const port = parseInt(process.env.PORT || '3000', 10);
+    const port = parseInt(process.env.PORT || '1206', 10);
     await app.listen(port, '0.0.0.0');
 
     const appUrl = await app.getUrl();

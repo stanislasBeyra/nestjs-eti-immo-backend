@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserCategorie } from './entities/user.entity';
+import { Agence } from '../agence/entities/agence.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { IsNull } from 'typeorm';
@@ -11,6 +12,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Agence)
+    private agenceRepository: Repository<Agence>,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -123,5 +126,14 @@ export class UsersService {
     user.last_login_at = new Date();
     await this.usersRepository.save(user);
     return user;
+  }
+
+  async getAdminAgences(userId: number) {
+    return await this.agenceRepository
+      .createQueryBuilder('agence')
+      .where('agence.admin_id = :userId', { userId })
+      .andWhere('agence.deleted_at IS NULL')
+      .orderBy('agence.created_at', 'DESC')
+      .getMany();
   }
 } 
