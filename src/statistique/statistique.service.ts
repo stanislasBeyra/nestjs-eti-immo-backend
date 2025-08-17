@@ -5,6 +5,7 @@ import { Bien, PropertyStatus } from '../biens/entities/bien.entity';
 import { Location, LocationStatut } from '../location/entities/location.entity';
 import { Locataire } from '../locataire/entities/locataire.entity';
 import { Agence, AgenceStatus } from '../agence/entities/agence.entity';
+import { Proprietaire } from 'src/proprietaires/entities/proprietaire.entity';
 
 export interface DashboardStats {
   totalBiens: {
@@ -17,6 +18,10 @@ export interface DashboardStats {
   };
   totalLocataires: number;
   totalAgences: number;
+  proprietaires: {
+    total: number;
+    sansBien: number;
+  };
 }
 
 @Injectable()
@@ -31,6 +36,8 @@ export class StatistiqueService {
 
     @InjectRepository(Agence)
     private readonly agenceRepository: Repository<Agence>,
+    @InjectRepository(Proprietaire)
+    private readonly proprietaireRepository: Repository<Proprietaire>,
   ) {}
 
   async statsDashboard(): Promise<DashboardStats> {
@@ -68,11 +75,23 @@ export class StatistiqueService {
       .where('locataire.statut = :statut', { statut: 1 }) // 1 = actif
       .andWhere('locataire.deleted_at IS NULL')
       .getCount();
+
+    // Nombre total d'agences actives
     const totalAgences = await this.agenceRepository
       .createQueryBuilder('agence')
       .where('agence.status = :status', { status: AgenceStatus.APPROVED })
       .andWhere('agence.deleted_at IS NULL')
       .getCount();
+
+
+      const proprietaireStats = await this.proprietaireRepository
+  .createQueryBuilder('proprietaire')
+  .leftJoin('proprietaire.biens', 'bien')
+  .select('COUNT(DISTINCT proprietaire.id)', 'totalProprietaires')
+  .addSelect('COUNT(DISTINCT CASE WHEN bien.id IS NULL THEN proprietaire.id END)', 'proprietairesSansBien')
+  .where('proprietaire.deleted_at IS NULL')
+  .getRawOne();
+
     return {
       totalBiens: {
         count: parseInt(totalBiensResult?.count || '0'),
@@ -83,7 +102,11 @@ export class StatistiqueService {
         somme: parseFloat(biensAvecLocationActiveResult?.somme || '0')
       },
       totalLocataires,
-      totalAgences
+      totalAgences,
+      proprietaires: {
+        total: parseInt(proprietaireStats?.totalProprietaires || '0'),
+        sansBien: parseInt(proprietaireStats?.proprietairesSansBien || '0')
+      }
     };
   }
 

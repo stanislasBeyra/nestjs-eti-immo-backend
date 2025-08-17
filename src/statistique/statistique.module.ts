@@ -6,6 +6,7 @@ import { Bien } from '../biens/entities/bien.entity';
 import { Location } from '../location/entities/location.entity';
 import { Locataire } from '../locataire/entities/locataire.entity';
 import { Agence } from '../agence/entities/agence.entity';
+import { Proprietaire } from '../proprietaires/entities/proprietaire.entity';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { Agence } from '../agence/entities/agence.entity';
       Bien,
       Location,
       Locataire,
-      Agence
+      Agence,
+      Proprietaire
     ])
   ],
   controllers: [StatistiqueController],

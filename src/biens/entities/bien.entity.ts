@@ -42,6 +42,10 @@ export class Bien {
   @Column({ type: 'bigint', comment: 'ID du propriétaire du bien' })
   proprietaire_id: number;
 
+  // @ManyToOne(() => Proprietaire, (proprietaire) => proprietaire.biens)
+  // @JoinColumn({ name: 'proprietaire_id' })
+  // proprietaire: Proprietaire;
+
   @ApiProperty()
   @Column({ length: 255, comment: 'Titre du bien' })
   title: string;
@@ -160,7 +164,7 @@ export class Bien {
   agence: Agence;
 
   @ApiProperty({ type: () => Proprietaire })
-  @ManyToOne(() => Proprietaire, proprietaire => proprietaire.properties)
+  @ManyToOne(() => Proprietaire, proprietaire => proprietaire.biens)
   @JoinColumn({ name: 'proprietaire_id' })
   proprietaire: Proprietaire;
 
