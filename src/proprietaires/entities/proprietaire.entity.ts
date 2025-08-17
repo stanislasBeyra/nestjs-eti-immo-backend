@@ -47,6 +47,9 @@ export class Proprietaire {
   })
   adresse: string;
 
+  @OneToMany(() => Bien, (bien) => bien.proprietaire)
+  biens: Bien[];
+
   @Column({ 
     length: 255, 
     nullable: true, 
