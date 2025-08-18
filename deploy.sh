@@ -37,15 +37,25 @@ update_status "pulling" "Synchronisation avec le dépôt distant..."
 # Récupérer les dernières modifications (gestion des branches divergentes)
 echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
 
+# Gestion des modifications locales et synchronisation
+echo "💾 Gestion des modifications locales..." >> $LOG_FILE 2>&1
+
 # Sauvegarder les modifications locales si nécessaire
 if ! git diff-index --quiet HEAD --; then
     echo "💾 Sauvegarde des modifications locales..." >> $LOG_FILE 2>&1
     git stash >> $LOG_FILE 2>&1
 fi
 
-# Synchroniser avec le dépôt distant
+# Synchroniser avec le dépôt distant (gestion des conflits)
+echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
 git fetch origin >> $LOG_FILE 2>&1
-git reset --hard origin/$BRANCH >> $LOG_FILE 2>&1
+
+# Forcer la synchronisation en cas de conflit
+if ! git reset --hard origin/$BRANCH >> $LOG_FILE 2>&1; then
+    echo "⚠️ Conflit détecté, nettoyage forcé..." >> $LOG_FILE 2>&1
+    git clean -fd >> $LOG_FILE 2>&1
+    git reset --hard origin/$BRANCH >> $LOG_FILE 2>&1
+fi
 
 # Restaurer les modifications locales si nécessaire
 if git stash list | grep -q .; then
