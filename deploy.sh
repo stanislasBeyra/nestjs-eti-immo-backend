@@ -2,7 +2,7 @@
 
 # Configuration
 APP_DIR="/home/partenai/public_html/nestjs/git_update"
-BRANCH=main
+BRANCH=devs
 LOG_FILE=$APP_DIR/deploy.log
 STATUS_FILE=$APP_DIR/public/deploy-status.json
 
