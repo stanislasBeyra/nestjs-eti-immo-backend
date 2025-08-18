@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-APP_DIR=$(pwd)
+APP_DIR="/home/partenai/public_html/nestjs/git_update"
 BRANCH=main
 LOG_FILE=$APP_DIR/deploy.log
 STATUS_FILE=$APP_DIR/public/deploy-status.json
@@ -19,8 +19,24 @@ update_status "starting" "Déploiement en cours..."
 echo "[1/4] 📥 Git Pull..." >> $LOG_FILE 2>&1
 update_status "pulling" "Récupération des modifications Git..."
 
-# Récupérer les dernières modifications
-git pull origin $BRANCH >> $LOG_FILE 2>&1
+# Récupérer les dernières modifications (gestion des branches divergentes)
+echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
+
+# Sauvegarder les modifications locales si nécessaire
+if ! git diff-index --quiet HEAD --; then
+    echo "💾 Sauvegarde des modifications locales..." >> $LOG_FILE 2>&1
+    git stash >> $LOG_FILE 2>&1
+fi
+
+# Synchroniser avec le dépôt distant
+git fetch origin >> $LOG_FILE 2>&1
+git reset --hard origin/$BRANCH >> $LOG_FILE 2>&1
+
+# Restaurer les modifications locales si nécessaire
+if git stash list | grep -q .; then
+    echo "🔄 Restauration des modifications locales..." >> $LOG_FILE 2>&1
+    git stash pop >> $LOG_FILE 2>&1
+fi
 
 if [ $? -eq 0 ]; then
     echo "[2/4] 📦 Installation des dépendances..." >> $LOG_FILE 2>&1
