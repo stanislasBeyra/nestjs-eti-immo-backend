@@ -6,6 +6,7 @@ import { Bien } from '../../biens/entities/bien.entity';
 import { Location } from '../../location/entities/location.entity';
 import { Paiement } from '../../paiement/entities/paiement.entity';
 import { User } from '../../users/entities/user.entity';
+import { Demarcheur } from '../../demarcheur/entities/demarcheur.entity';
 
 export enum AgenceStatus {
   PENDING = 0,
@@ -110,4 +111,7 @@ export class Agence {
 
   @OneToMany(() => Paiement, paiement => paiement.agence)
   paiements: Paiement[];
+
+  @OneToMany(() => Demarcheur, demarcheur => demarcheur.agence)
+  demarcheurs: Demarcheur[];
 }

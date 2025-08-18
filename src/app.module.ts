@@ -28,6 +28,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { LoggingModule } from './common/modules/logging.module';
 import { CorsMiddleware } from './common/middleware/cors.middleware';
 import { StatistiqueModule } from './statistique/statistique.module';
+import { DemarcheurModule } from './demarcheur/demarcheur.module';
+import { DeployModule } from './deploy/deploy.module';
 
 @Module({
   imports: [
@@ -70,6 +72,8 @@ import { StatistiqueModule } from './statistique/statistique.module';
     DocumentsModule,
     NotificationsModule,
     StatistiqueModule,
+    DemarcheurModule,
+    DeployModule,
   ],
   controllers: [AppController],
   providers: [
