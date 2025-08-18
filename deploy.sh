@@ -14,11 +14,45 @@ if [ -f "$HOME/.npmrc" ]; then
     export NPM_CONFIG_PREFIX="$HOME/.npm-global"
 fi
 
-# Vérifier si nous sommes dans un environnement cPanel Node.js
-if [ -d "$HOME/nodevenv" ]; then
-    # Activer l'environnement Node.js de cPanel
+# Vérifier et activer l'environnement Node.js de cPanel
+echo "🔍 Recherche de l'environnement Node.js..." >> $LOG_FILE 2>&1
+
+# Essayer plusieurs chemins possibles pour l'environnement Node.js
+NODE_PATHS=(
+    "$HOME/nodevenv/public_html/bin"
+    "$HOME/nodevenv/public_html/18/bin"
+    "$HOME/nodevenv/public_html/16/bin"
+    "$HOME/nodevenv/public_html/14/bin"
+    "/usr/local/bin"
+    "/usr/bin"
+)
+
+NODE_ACTIVATED=false
+
+for NODE_PATH in "${NODE_PATHS[@]}"; do
+    if [ -d "$NODE_PATH" ] && [ -f "$NODE_PATH/node" ] && [ -f "$NODE_PATH/npm" ]; then
+        echo "✅ Environnement Node.js trouvé: $NODE_PATH" >> $LOG_FILE 2>&1
+        export PATH="$NODE_PATH:$PATH"
+        NODE_ACTIVATED=true
+        break
+    fi
+done
+
+# Si aucun environnement trouvé, essayer d'activer via source
+if [ "$NODE_ACTIVATED" = false ] && [ -d "$HOME/nodevenv" ]; then
+    echo "🔄 Tentative d'activation via source..." >> $LOG_FILE 2>&1
     source $HOME/nodevenv/public_html/bin/activate 2>/dev/null || true
-    echo "✅ Environnement Node.js cPanel activé" >> $LOG_FILE 2>&1
+    source $HOME/nodevenv/public_html/18/bin/activate 2>/dev/null || true
+    source $HOME/nodevenv/public_html/16/bin/activate 2>/dev/null || true
+fi
+
+# Vérifier si npm est maintenant disponible
+if command -v npm >/dev/null 2>&1; then
+    echo "✅ npm trouvé: $(which npm)" >> $LOG_FILE 2>&1
+    echo "✅ Version npm: $(npm --version)" >> $LOG_FILE 2>&1
+else
+    echo "❌ npm non trouvé dans le PATH" >> $LOG_FILE 2>&1
+    echo "PATH actuel: $PATH" >> $LOG_FILE 2>&1
 fi
 
 echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
