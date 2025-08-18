@@ -6,6 +6,21 @@ BRANCH=devs
 LOG_FILE=$APP_DIR/deploy.log
 STATUS_FILE=$APP_DIR/public/deploy-status.json
 
+# Configuration Node.js/npm pour cPanel
+export NODE_ENV=production
+
+# Utiliser npm de cPanel Node.js App
+if [ -f "$HOME/.npmrc" ]; then
+    export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+fi
+
+# Vérifier si nous sommes dans un environnement cPanel Node.js
+if [ -d "$HOME/nodevenv" ]; then
+    # Activer l'environnement Node.js de cPanel
+    source $HOME/nodevenv/public_html/bin/activate 2>/dev/null || true
+    echo "✅ Environnement Node.js cPanel activé" >> $LOG_FILE 2>&1
+fi
+
 echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
 
 # Fonction pour mettre à jour le statut
