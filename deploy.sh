@@ -16,8 +16,8 @@ update_status() {
 # Mettre à jour le statut initial
 update_status "starting" "Déploiement en cours..."
 
-echo "[1/4] 📥 Git Pull..." >> $LOG_FILE 2>&1
-update_status "pulling" "Récupération des modifications Git..."
+echo "[1/4] 📥 Synchronisation Git..." >> $LOG_FILE 2>&1
+update_status "pulling" "Synchronisation avec le dépôt distant..."
 
 # Récupérer les dernières modifications (gestion des branches divergentes)
 echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
