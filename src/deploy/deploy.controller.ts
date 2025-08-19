@@ -146,6 +146,11 @@ export class DeployController {
     }
   }
 
+  @Get('Kissipro')
+  async getKissipro(@Res() res: Response) {
+    return "Kissipro";
+  }
+
   @Get('durations')
   async getDurations(@Res() res: Response) {
     try {
