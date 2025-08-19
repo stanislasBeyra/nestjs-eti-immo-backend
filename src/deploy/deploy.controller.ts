@@ -178,7 +178,7 @@ export class DeployController {
       });
     }
   }
-  @Get('testess')
+  @Get('teste')
   async getTest(@Res() res: Response) {
     return res.send('Test success' + ' ' + __dirname);
   }
