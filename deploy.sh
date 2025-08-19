@@ -120,25 +120,15 @@ if [ $? -eq 0 ]; then
         if command -v npm >/dev/null 2>&1; then
             echo "🔨 Compilation avec npm run build..." >> $LOG_FILE 2>&1
             
-            # Vérifier que rimraf est disponible
-            if [ -f "$APP_DIR/node_modules/.bin/rimraf" ]; then
-                echo "✅ Rimraf trouvé dans node_modules/.bin/" >> $LOG_FILE 2>&1
-                # Ajouter node_modules/.bin au PATH pour ce build
-                export PATH="$APP_DIR/node_modules/.bin:$PATH"
-                echo "🔧 PATH mis à jour pour inclure node_modules/.bin" >> $LOG_FILE 2>&1
-            elif [ -f "$APP_DIR/node_modules/rimraf/bin/rimraf.js" ]; then
-                echo "✅ Rimraf trouvé dans node_modules/rimraf/bin/" >> $LOG_FILE 2>&1
-                # Créer le lien symbolique manuellement
-                ln -sf ../rimraf/bin/rimraf.js "$APP_DIR/node_modules/.bin/rimraf" 2>/dev/null || true
-                export PATH="$APP_DIR/node_modules/.bin:$PATH"
-                echo "🔧 Lien symbolique rimraf créé et PATH mis à jour" >> $LOG_FILE 2>&1
-            else
-                echo "⚠️ Rimraf non trouvé, tentative d'installation..." >> $LOG_FILE 2>&1
-                npm install rimraf --save-dev >> $LOG_FILE 2>&1
-                export PATH="$APP_DIR/node_modules/.bin:$PATH"
-            fi
+            # Nettoyer le dossier dist manuellement (remplace rimraf)
+            echo "🧹 Nettoyage du dossier dist..." >> $LOG_FILE 2>&1
+            rm -rf "$APP_DIR/dist" 2>/dev/null || true
+            echo "✅ Dossier dist nettoyé" >> $LOG_FILE 2>&1
             
-            npm run build >> $LOG_FILE 2>&1
+            # Exécuter le build sans le prebuild (déjà fait manuellement)
+            echo "🔨 Exécution du build..." >> $LOG_FILE 2>&1
+            cd "$APP_DIR"
+            npx nest build >> $LOG_FILE 2>&1
             
             if [ $? -eq 0 ]; then
                 echo "✅ Build réussi" >> $LOG_FILE 2>&1
