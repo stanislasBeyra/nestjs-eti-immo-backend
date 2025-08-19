@@ -68,7 +68,11 @@ dist
 
 # Gatsby files
 .cache/
-public
+public/*
+!public/
+!public/index.html
+!public/deploy-dashboard.html
+!public/uploads/.gitkeep
 
 # Storybook build outputs
 .out

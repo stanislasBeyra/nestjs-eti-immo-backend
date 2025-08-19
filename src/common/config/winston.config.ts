@@ -43,6 +43,31 @@ const transports: winston.transport[] = [
         return log;
       })
     )
+  }),
+  
+  // Fichier de logs général
+  new winston.transports.File({
+    filename: 'logs/app.log',
+    maxsize: 5242880, // 5MB
+    maxFiles: 5,
+    tailable: true
+  }),
+  
+  // Fichier de logs d'erreurs
+  new winston.transports.File({
+    filename: 'logs/error.log',
+    level: 'error',
+    maxsize: 5242880, // 5MB
+    maxFiles: 5,
+    tailable: true
+  }),
+  
+  // Fichier de logs de déploiement
+  new winston.transports.File({
+    filename: 'logs/deploy.log',
+    maxsize: 5242880, // 5MB
+    maxFiles: 3,
+    tailable: true
   })
 ];
 
