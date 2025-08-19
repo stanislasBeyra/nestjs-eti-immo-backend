@@ -82,4 +82,8 @@ export class DeployController {
       });
     }
   }
+  @Get('test')
+  async getTest(@Res() res: Response) {
+    return res.send('Test success');
+  }
 }
