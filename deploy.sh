@@ -95,10 +95,10 @@ if [ $? -eq 0 ]; then
     # Aller dans le dossier de l'application
     cd $APP_DIR
 
-    # Installer les dépendances
-    if command -v npm >/dev/null 2>&1; then
-        echo "📦 Installation des dépendances avec npm..." >> $LOG_FILE 2>&1
-        npm install --production >> $LOG_FILE 2>&1
+            # Installer les dépendances
+        if command -v npm >/dev/null 2>&1; then
+            echo "📦 Installation des dépendances avec npm..." >> $LOG_FILE 2>&1
+            npm install >> $LOG_FILE 2>&1
         
         if [ $? -eq 0 ]; then
             echo "✅ Dépendances installées avec succès" >> $LOG_FILE 2>&1
