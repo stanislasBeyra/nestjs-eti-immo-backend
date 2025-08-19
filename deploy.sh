@@ -1,10 +1,18 @@
 #!/bin/bash
 
-# Configuration
-APP_DIR="/home/partenai/public_html/nestjs/git_update"
-BRANCH=devs
-LOG_FILE=$APP_DIR/deploy.log
-STATUS_FILE=$APP_DIR/public/deploy-status.json
+            # Configuration
+            APP_DIR="/home/partenai/public_html/nestjs/git_update"
+            BRANCH=devs
+            LOG_FILE=$APP_DIR/deploy.log
+            STATUS_FILE=$APP_DIR/public/deploy-status.json
+            
+            # Variables pour le calcul des durées
+            START_TIME=$(date +%s)
+            GIT_START_TIME=0
+            DEPS_START_TIME=0
+            BUILD_START_TIME=0
+            CLEAN_START_TIME=0
+            RESTART_START_TIME=0
 
 # Configuration pour cPanel Node.js App
 export NODE_ENV=production
@@ -48,16 +56,103 @@ fi
 
 echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
 
-# Fonction pour mettre à jour le statut
-update_status() {
-    echo "{\"status\": \"$1\", \"message\": \"$2\", \"timestamp\": \"$(date)\"}" > $STATUS_FILE
-}
+            # Fonction pour mettre à jour le statut
+            update_status() {
+                echo "{\"status\": \"$1\", \"message\": \"$2\", \"timestamp\": \"$(date)\"}" > $STATUS_FILE
+            }
 
-# Mettre à jour le statut initial
-update_status "starting" "Déploiement en cours..."
+                        # Fonction pour sauvegarder l'historique
+            save_deployment_history() {
+                local status=$1
+                local message=$2
+                local history_file=$APP_DIR/public/deploy-history.json
+                
+                echo "💾 Sauvegarde de l'historique: $status - $message" >> $LOG_FILE 2>&1
+                
+                # Créer le fichier d'historique s'il n'existe pas
+                if [ ! -f "$history_file" ]; then
+                    echo '{"deployments": []}' > "$history_file"
+                    echo "📁 Fichier d'historique créé: $history_file" >> $LOG_FILE 2>&1
+                fi
+                
+                # Lire l'historique existant
+                local history_content=$(cat "$history_file")
+                echo "📖 Historique existant lu: $history_content" >> $LOG_FILE 2>&1
+                
+                # Créer la nouvelle entrée
+                local commit_hash=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')
+                local new_entry="{\"id\": \"$(date +%s)\", \"status\": \"$status\", \"message\": \"$message\", \"timestamp\": \"$(date)\", \"branch\": \"$BRANCH\", \"commit\": \"$commit_hash\"}"
+                
+                echo "🆕 Nouvelle entrée: $new_entry" >> $LOG_FILE 2>&1
+                
+                # Ajouter la nouvelle entrée au début de l'historique
+                # Utiliser une approche plus simple sans jq
+                if [ "$history_content" = '{"deployments": []}' ]; then
+                    # Premier déploiement
+                    local updated_history="{\"deployments\": [$new_entry]}"
+                else
+                    # Ajouter au début
+                    local updated_history=$(echo "$history_content" | sed 's/\[/['"$new_entry"',/')
+                fi
+                
+                echo "📝 Historique mis à jour: $updated_history" >> $LOG_FILE 2>&1
+                
+                # Sauvegarder l'historique mis à jour
+                echo "$updated_history" > "$history_file"
+                
+                # Vérifier que le fichier a été écrit
+                if [ -f "$history_file" ]; then
+                    echo "✅ Historique sauvegardé avec succès dans: $history_file" >> $LOG_FILE 2>&1
+                    echo "📊 Contenu final: $(cat "$history_file")" >> $LOG_FILE 2>&1
+                else
+                    echo "❌ Erreur: Impossible de sauvegarder l'historique" >> $LOG_FILE 2>&1
+                fi
+            }
 
-echo "[1/5] 📥 Synchronisation Git..." >> $LOG_FILE 2>&1
-update_status "pulling" "Synchronisation avec le dépôt distant..."
+        # Fonction pour calculer et sauvegarder les durées des étapes
+        save_step_durations() {
+            local current_time=$(date +%s)
+            local durations_file=$APP_DIR/public/deploy-durations.json
+            
+            # Calculer les durées (en secondes)
+            local git_duration=$((DEPS_START_TIME - GIT_START_TIME))
+            local deps_duration=$((BUILD_START_TIME - DEPS_START_TIME))
+            local build_duration=$((CLEAN_START_TIME - BUILD_START_TIME))
+            local clean_duration=$((RESTART_START_TIME - CLEAN_START_TIME))
+            local restart_duration=$((current_time - RESTART_START_TIME))
+            
+            # Créer l'objet des durées
+            local durations_json="{
+                \"timestamp\": \"$(date)\",
+                \"durations\": {
+                    \"git\": $git_duration,
+                    \"dependencies\": $deps_duration,
+                    \"build\": $build_duration,
+                    \"clean\": $clean_duration,
+                    \"restart\": $restart_duration
+                }
+            }"
+            
+            # Sauvegarder les durées
+            echo "$durations_json" > "$durations_file"
+            
+            # Log des durées
+            echo "⏱️ Durées des étapes:" >> $LOG_FILE 2>&1
+            echo "   - Git Sync: ${git_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Dépendances: ${deps_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Build: ${build_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Nettoyage: ${clean_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Redémarrage: ${restart_duration}s" >> $LOG_FILE 2>&1
+        }
+
+            # Mettre à jour le statut initial
+            update_status "starting" "Déploiement en cours..."
+            save_deployment_history "starting" "Déploiement en cours..."
+
+            echo "[1/5] 📥 Synchronisation Git..." >> $LOG_FILE 2>&1
+            GIT_START_TIME=$(date +%s)
+            update_status "pulling" "Synchronisation avec le dépôt distant..."
+            save_deployment_history "pulling" "Synchronisation Git en cours..."
 
 # Récupérer les dernières modifications (gestion des branches divergentes)
 echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
@@ -89,8 +184,10 @@ if git stash list | grep -q .; then
 fi
 
 if [ $? -eq 0 ]; then
-    echo "[2/5] 📦 Installation des dépendances..." >> $LOG_FILE 2>&1
-    update_status "installing" "Installation des dépendances..."
+                    echo "[2/5] 📦 Installation des dépendances..." >> $LOG_FILE 2>&1
+                DEPS_START_TIME=$(date +%s)
+                update_status "installing" "Installation des dépendances..."
+                save_deployment_history "installing" "Installation des dépendances..."
 
     # Aller dans le dossier de l'application
     cd $APP_DIR
@@ -103,18 +200,21 @@ if [ $? -eq 0 ]; then
         if [ $? -eq 0 ]; then
             echo "✅ Dépendances installées avec succès" >> $LOG_FILE 2>&1
         else
-            echo "❌ Erreur lors de l'installation des dépendances" >> $LOG_FILE 2>&1
-            update_status "error" "Erreur lors de l'installation des dépendances"
-            exit 1
+                                    echo "❌ Erreur lors de l'installation des dépendances" >> $LOG_FILE 2>&1
+                        update_status "error" "Erreur lors de l'installation des dépendances"
+                        save_deployment_history "error" "Erreur lors de l'installation des dépendances"
+                        exit 1
         fi
     else
         echo "⚠️ npm non disponible, installation des dépendances ignorée" >> $LOG_FILE 2>&1
         echo "✅ Installation ignorée (cPanel Node.js App gérera les dépendances)" >> $LOG_FILE 2>&1
     fi
 
-    if [ $? -eq 0 ]; then
-        echo "[3/5] 🔨 Compilation du projet..." >> $LOG_FILE 2>&1
-        update_status "building" "Compilation du projet..."
+                        if [ $? -eq 0 ]; then
+                        echo "[3/5] 🔨 Compilation du projet..." >> $LOG_FILE 2>&1
+                        BUILD_START_TIME=$(date +%s)
+                        update_status "building" "Compilation du projet..."
+                        save_deployment_history "building" "Compilation du projet..."
 
         # Rebuild du projet NestJS
         if command -v npm >/dev/null 2>&1; then
@@ -142,9 +242,11 @@ if [ $? -eq 0 ]; then
             echo "✅ Build ignoré (cPanel Node.js App gérera la compilation)" >> $LOG_FILE 2>&1
         fi
 
-        if [ $? -eq 0 ]; then
-            echo "[4/5] 🔧 Nettoyage et optimisation..." >> $LOG_FILE 2>&1
-            update_status "cleaning" "Nettoyage et optimisation..."
+                            if [ $? -eq 0 ]; then
+                        echo "[4/5] 🔧 Nettoyage et optimisation..." >> $LOG_FILE 2>&1
+                        CLEAN_START_TIME=$(date +%s)
+                        update_status "cleaning" "Nettoyage et optimisation..."
+                        save_deployment_history "cleaning" "Nettoyage et optimisation..."
 
             # Nettoyer les fichiers temporaires
             echo "🧹 Nettoyage des fichiers temporaires..." >> $LOG_FILE 2>&1
@@ -158,9 +260,11 @@ if [ $? -eq 0 ]; then
 
             echo "✅ Nettoyage terminé" >> $LOG_FILE 2>&1
 
-            if [ $? -eq 0 ]; then
-                echo "[5/5] 🔄 Redémarrage de l'application..." >> $LOG_FILE 2>&1
-                update_status "restarting" "Redémarrage de l'application..."
+                                if [ $? -eq 0 ]; then
+                        echo "[5/5] 🔄 Redémarrage de l'application..." >> $LOG_FILE 2>&1
+                        RESTART_START_TIME=$(date +%s)
+                        update_status "restarting" "Redémarrage de l'application..."
+                        save_deployment_history "restarting" "Redémarrage de l'application..."
 
                 # Redémarrer Passenger (cPanel)
                 echo "🔄 Redémarrage via Passenger..." >> $LOG_FILE 2>&1
@@ -176,8 +280,12 @@ if [ $? -eq 0 ]; then
                 # Attendre encore un peu pour que l'application soit complètement démarrée
                 sleep 10
 
-                echo "✅ Déploiement terminé avec succès le $(date)" >> $LOG_FILE 2>&1
-                update_status "success" "Déploiement terminé avec succès"
+                                        echo "✅ Déploiement terminé avec succès le $(date)" >> $LOG_FILE 2>&1
+                        update_status "success" "Déploiement terminé avec succès"
+                        save_deployment_history "success" "Déploiement terminé avec succès"
+                        
+                        # Calculer et sauvegarder les durées des étapes
+                        save_step_durations
                 
                 # Informations finales
                 echo "🎉 Déploiement réussi !" >> $LOG_FILE 2>&1

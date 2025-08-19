@@ -3,375 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚀 Dashboard Déploiement NestJS</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .header p {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        .status-section {
-            padding: 30px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .status-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid #3498db;
-        }
-
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .status-title {
-            font-size: 1.3em;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-badge.starting { background: #f39c12; color: white; }
-        .status-badge.pulling { background: #3498db; color: white; }
-        .status-badge.installing { background: #9b59b6; color: white; }
-        .status-badge.building { background: #e67e22; color: white; }
-        .status-badge.cleaning { background: #16a085; color: white; }
-        .status-badge.restarting { background: #e74c3c; color: white; }
-        .status-badge.success { background: #27ae60; color: white; }
-        .status-badge.error { background: #c0392b; color: white; }
-
-        .status-message {
-            font-size: 1.1em;
-            color: #555;
-            margin-bottom: 10px;
-        }
-
-        .status-timestamp {
-            font-size: 0.9em;
-            color: #888;
-            font-style: italic;
-        }
-
-        .logs-section {
-            padding: 30px;
-        }
-
-        .logs-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .logs-title {
-            font-size: 1.5em;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
-        }
-
-        .logs-container {
-            background: #1e1e1e;
-            color: #00ff99;
-            padding: 20px;
-            border-radius: 15px;
-            height: 400px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            border: 2px solid #333;
-        }
-
-        .logs-container::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .logs-container::-webkit-scrollbar-track {
-            background: #2a2a2a;
-            border-radius: 4px;
-        }
-
-        .logs-container::-webkit-scrollbar-thumb {
-            background: #00ff99;
-            border-radius: 4px;
-        }
-
-        .auto-refresh {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .auto-refresh input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-
-        .auto-refresh label {
-            color: #555;
-            font-weight: 500;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #ecf0f1;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 15px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3498db, #2ecc71);
-            width: 0%;
-            transition: width 0.5s ease;
-            border-radius: 4px;
-        }
-
-        .step-indicator {
-            display: flex;
-            justify-content: space-between;
-            margin: 20px 0;
-        }
-
-        .step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-        }
-
-        .step-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #ecf0f1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #7f8c8d;
-            transition: all 0.3s ease;
-        }
-
-        .step-circle.active {
-            background: #3498db;
-            color: white;
-            transform: scale(1.1);
-        }
-
-        .step-circle.completed {
-            background: #27ae60;
-            color: white;
-        }
-
-        .step-circle.error {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .step-label {
-            font-size: 0.9em;
-            color: #7f8c8d;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .step-label.active {
-            color: #3498db;
-            font-weight: 600;
-        }
-
-        .step-label.completed {
-            color: #27ae60;
-            font-weight: 600;
-        }
-
-        .step-label.error {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-
-        .footer {
-            background: #ecf0f1;
-            padding: 20px;
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 0.9em;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 15px;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .step-indicator {
-                flex-direction: column;
-                gap: 15px;
+    <title>Pipeline CI/CD Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'pipeline-bg': '#f8f9fa',
+                        'stage-success': '#d4edda',
+                        'stage-pending': '#e2e6ea',
+                        'commit-blue': '#007bff',
+                        'text-muted': '#6c757d'
+                    }
+                }
             }
         }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Dashboard Déploiement NestJS v6</h1>
-            <p>Surveillance en temps réel du processus de déploiement</p>
+<body class="bg-pipeline-bg min-h-screen font-sans">
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sm mb-6 p-4">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">deployment view</h1>
+            <div class="text-sm text-text-muted">
+                Temps moyen des stages: 
+                <span class="text-gray-700">(Durée complète moyenne: ~3min 25s)</span>
+            </div>
         </div>
 
-        <div class="status-section">
-            <div class="status-card">
-                <div class="status-header">
-                    <div class="status-title">📊 Statut du Déploiement</div>
-                    <div id="status-badge" class="status-badge starting">En cours...</div>
+        <!-- Pipeline Stages Header -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <!-- Stages Header -->
+            <div class="grid grid-cols-7 bg-gray-50 border-b">
+                <div class="p-4 text-center font-semibold text-gray-700">date deploiement</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">
+                    <div>git Syncro:</div>
+                    <div class="text-xs text-text-muted mt-1" id="header-git">--</div>
                 </div>
-                <div id="status-message" class="status-message">Initialisation du déploiement...</div>
-                <div id="status-timestamp" class="status-timestamp">Dernière mise à jour: --</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">
+                    <div>Dependencies</div>
+                    <div class="text-xs text-text-muted mt-1" id="header-deps">--</div>
+                </div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">
+                    <div>Build</div>
+                    <div class="text-xs text-text-muted mt-1" id="header-build">--</div>
+                </div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">
+                    <div>Nettoyage</div>
+                    <div class="text-xs text-text-muted mt-1" id="header-clean">--</div>
+                </div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">
+                    <div>Redémarrage</div>
+                    <div class="text-xs text-text-muted mt-1" id="header-restart">--</div>
+                </div>
+
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">
+                    <div>temps total</div>
+                    <div class="text-xs text-text-muted mt-1" id="header-total">--</div>
+                </div>
                 
-                <div class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
-                </div>
+            </div>
 
-                <div class="step-indicator">
-                    <div class="step">
-                        <div id="step1" class="step-circle">1</div>
-                        <div id="label1" class="step-label">Git Sync</div>
-                    </div>
-                    <div class="step">
-                        <div id="step2" class="step-circle">2</div>
-                        <div id="label2" class="step-label">Dépendances</div>
-                    </div>
-                    <div class="step">
-                        <div id="step3" class="step-circle">3</div>
-                        <div id="label3" class="step-label">Build</div>
-                    </div>
-                    <div class="step">
-                        <div id="step4" class="step-circle">4</div>
-                        <div id="label4" class="step-label">Nettoyage</div>
-                    </div>
-                    <div class="step">
-                        <div id="step5" class="step-circle">5</div>
-                        <div id="label5" class="step-label">Redémarrage</div>
-                    </div>
-                </div>
+            <!-- Pipeline Rows -->
+            <div class="divide-y" id="pipeline-rows">
+                <!-- Les lignes de déploiement seront générées dynamiquement ici -->
             </div>
         </div>
 
-        <div class="logs-section">
-            <div class="logs-header">
-                <div class="logs-title">📝 Logs de Déploiement</div>
-                <button id="refresh-btn" class="refresh-btn">🔄 Actualiser</button>
+        <!-- Footer Stats -->
+        <div class="mt-6 grid grid-cols-3 gap-4">
+            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                <div class="text-2xl font-bold text-green-600" id="success-rate">--</div>
+                <div class="text-sm text-text-muted">Taux de succès</div>
             </div>
-            
-            <div id="logs-container" class="logs-container">
-                Chargement des logs...
+            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600" id="avg-duration">--</div>
+                <div class="text-sm text-text-muted">Durée moyenne</div>
             </div>
-
-            <div class="auto-refresh">
-                <input type="checkbox" id="auto-refresh" checked>
-                <label for="auto-refresh">Actualisation automatique toutes les 5 secondes</label>
+            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
+                <div class="text-2xl font-bold text-purple-600" id="total-pipelines">--</div>
+                <div class="text-sm text-text-muted">Pipelines récents</div>
             </div>
         </div>
 
-        <div class="footer">
-            <p>Dashboard de déploiement NestJS - cPanel Node.js App</p>
-            <p>Dernière actualisation: <span id="last-update">--</span></p>
+        <!-- Contrôles -->
+        <div class="mt-6 bg-white rounded-lg shadow-sm p-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button id="refresh-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        🔄 Actualiser
+                    </button>
+                    <button id="clear-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        🗑️ Effacer
+                    </button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="auto-refresh" checked class="w-4 h-4">
+                    <label for="auto-refresh" class="text-sm text-gray-600">Actualisation automatique</label>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        class DeploymentDashboard {
+        class PipelineDashboard {
             constructor() {
                 this.autoRefreshInterval = null;
-                this.currentStep = 0;
                 this.init();
             }
 
             init() {
+                console.log('🚀 Initialisation du dashboard...');
                 this.setupEventListeners();
-                this.loadStatus();
-                this.loadLogs();
+                this.showLoading();
+                this.loadData();
                 this.startAutoRefresh();
             }
 
             setupEventListeners() {
                 document.getElementById('refresh-btn').addEventListener('click', () => {
-                    this.loadStatus();
-                    this.loadLogs();
+                    this.loadData();
+                });
+
+                document.getElementById('clear-btn').addEventListener('click', () => {
+                    this.clearData();
                 });
 
                 document.getElementById('auto-refresh').addEventListener('change', (e) => {
@@ -383,123 +139,260 @@
                 });
             }
 
-            async loadStatus() {
+            async loadData() {
+                console.log('🔄 Chargement des données...');
+                
                 try {
-                    const response = await fetch('/api/deploy/status');
-                    if (response.ok) {
-                        const status = await response.json();
-                        this.updateStatus(status);
-                    }
-                } catch (error) {
-                    console.error('Erreur lors du chargement du statut:', error);
-                }
-            }
-
-            async loadLogs() {
-                try {
-                    const response = await fetch('/api/deploy/logs');
-                    if (response.ok) {
-                        const logs = await response.text();
-                        this.updateLogs(logs);
-                    }
-                } catch (error) {
-                    console.error('Erreur lors du chargement des logs:', error);
-                }
-            }
-
-            updateStatus(status) {
-                const badge = document.getElementById('status-badge');
-                const message = document.getElementById('status-message');
-                const timestamp = document.getElementById('status-timestamp');
-                const progressFill = document.getElementById('progress-fill');
-
-                // Mettre à jour le badge de statut
-                badge.className = `status-badge ${status.status}`;
-                badge.textContent = this.getStatusText(status.status);
-
-                // Mettre à jour le message
-                message.textContent = status.message;
-
-                // Mettre à jour le timestamp
-                timestamp.textContent = `Dernière mise à jour: ${status.timestamp}`;
-
-                // Mettre à jour la barre de progression
-                const progress = this.getProgressFromStatus(status.status);
-                progressFill.style.width = `${progress}%`;
-
-                // Mettre à jour les étapes
-                this.updateSteps(status.status);
-
-                // Mettre à jour le timestamp de dernière actualisation
-                document.getElementById('last-update').textContent = new Date().toLocaleString('fr-FR');
-            }
-
-            updateLogs(logs) {
-                const container = document.getElementById('logs-container');
-                container.innerHTML = logs.replace(/\n/g, '<br>');
-                container.scrollTop = container.scrollHeight;
-            }
-
-            getStatusText(status) {
-                const statusMap = {
-                    'starting': 'Démarrage',
-                    'pulling': 'Git Sync',
-                    'installing': 'Installation',
-                    'building': 'Build',
-                    'cleaning': 'Nettoyage',
-                    'restarting': 'Redémarrage',
-                    'success': 'Succès',
-                    'error': 'Erreur'
-                };
-                return statusMap[status] || status;
-            }
-
-            getProgressFromStatus(status) {
-                const progressMap = {
-                    'starting': 10,
-                    'pulling': 20,
-                    'installing': 40,
-                    'building': 60,
-                    'cleaning': 80,
-                    'restarting': 90,
-                    'success': 100,
-                    'error': 100
-                };
-                return progressMap[status] || 0;
-            }
-
-            updateSteps(status) {
-                const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
-                const labels = ['label1', 'label2', 'label3', 'label4', 'label5'];
-
-                steps.forEach((stepId, index) => {
-                    const step = document.getElementById(stepId);
-                    const label = document.getElementById(labels[index]);
-
-                    if (index < this.getCurrentStepIndex(status)) {
-                        step.className = 'step-circle completed';
-                        label.className = 'step-label completed';
-                    } else if (index === this.getCurrentStepIndex(status)) {
-                        step.className = 'step-circle active';
-                        label.className = 'step-label active';
+                    // Charger l'historique des déploiements
+                    console.log('📚 Chargement de l\'historique...');
+                    const historyResponse = await fetch('/api/deploy/history');
+                    console.log('📚 Réponse historique:', historyResponse.status, historyResponse.ok);
+                    
+                    if (historyResponse.ok) {
+                        const history = await historyResponse.json();
+                        console.log('📚 Données historiques:', history);
+                        this.updatePipelineRows(history);
                     } else {
-                        step.className = 'step-circle';
-                        label.className = 'step-label';
+                        console.error('❌ Erreur historique:', historyResponse.status, historyResponse.statusText);
                     }
-                });
+
+                    // Charger les durées actuelles
+                    console.log('⏱️ Chargement des durées...');
+                    const durationsResponse = await fetch('/api/deploy/durations');
+                    console.log('⏱️ Réponse durées:', durationsResponse.status, durationsResponse.ok);
+                    
+                    if (durationsResponse.ok) {
+                        const durations = await durationsResponse.json();
+                        console.log('⏱️ Données durées:', durations);
+                        this.updateHeaderDurations(durations);
+                    } else {
+                        console.error('❌ Erreur durées:', durationsResponse.status, durationsResponse.statusText);
+                    }
+
+                    // Charger le statut actuel
+                    console.log('📊 Chargement du statut...');
+                    const statusResponse = await fetch('/api/deploy/status');
+                    console.log('📊 Réponse statut:', statusResponse.status, statusResponse.ok);
+                    
+                    if (statusResponse.ok) {
+                        const status = await statusResponse.json();
+                        console.log('📊 Données statut:', status);
+                        this.updateCurrentStatus(status);
+                    } else {
+                        console.error('❌ Erreur statut:', statusResponse.status, statusResponse.statusText);
+                    }
+
+                } catch (error) {
+                    console.error('❌ Erreur lors du chargement des données:', error);
+                    this.showError('Erreur de chargement: ' + error.message);
+                }
             }
 
-            getCurrentStepIndex(status) {
-                const stepOrder = ['starting', 'pulling', 'installing', 'building', 'cleaning', 'restarting', 'success'];
-                return stepOrder.indexOf(status);
+            updatePipelineRows(history) {
+                const container = document.getElementById('pipeline-rows');
+                console.log('🔄 Mise à jour des lignes de pipeline avec:', history);
+                
+                if (!history.deployments || history.deployments.length === 0) {
+                    console.log('⚠️ Aucun déploiement trouvé');
+                    container.innerHTML = `
+                        <div class="p-8 text-center">
+                            <div class="text-gray-500 text-lg mb-2">📭 Aucun déploiement</div>
+                            <div class="text-gray-400">Lancez votre premier déploiement pour voir les données</div>
+                            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                🔄 Actualiser
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log(`✅ ${history.deployments.length} déploiements trouvés, génération des lignes...`);
+
+                const rowsHTML = history.deployments.map(deployment => {
+                    const date = new Date(deployment.timestamp);
+                    const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
+                    const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    // Utiliser les vraies données du déploiement
+                    // Pour l'instant, on affiche le statut et le message
+                    // Les durées seront ajoutées quand l'API les fournira
+                    const status = deployment.status;
+                    const message = deployment.message;
+                    
+                    // Formatage basique des durées (à améliorer avec les vraies données)
+                    const gitDuration = '--';
+                    const depsDuration = '--';
+                    const buildDuration = '--';
+                    const cleanDuration = '--';
+                    const restartDuration = '--';
+                    const totalDuration = '--';
+
+                    return `
+                        <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
+                            <div class="p-4 flex items-center justify-center">
+                                <div class="text-center">
+                                    <div class="text-xs text-text-muted">${dateStr}</div>
+                                    <div class="text-xs text-text-muted">${timeStr}</div>
+                                    <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${deployment.commit || 'N/A'}</div>
+                                    <div class="text-xs text-gray-500 mt-1">${message}</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${gitDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Git Sync</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${depsDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Deps</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
+                                    <div class="font-medium text-green-800">${buildDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Build</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${cleanDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Clean</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
+                                    <div class="font-medium text-green-800">${restartDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Restart</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${totalDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Total</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = rowsHTML;
+                this.updateStats(history.deployments);
+                this.animateRows();
+            }
+
+            updateHeaderDurations(durations) {
+                if (durations.durations) {
+                    document.getElementById('header-git').textContent = this.formatDuration(durations.durations.git);
+                    document.getElementById('header-deps').textContent = this.formatDuration(durations.durations.dependencies);
+                    document.getElementById('header-build').textContent = this.formatDuration(durations.durations.build);
+                    document.getElementById('header-clean').textContent = this.formatDuration(durations.durations.clean);
+                    document.getElementById('header-restart').textContent = this.formatDuration(durations.durations.restart);
+                    
+                    const total = durations.durations.git + durations.durations.dependencies + 
+                                durations.durations.build + durations.durations.clean + durations.durations.restart;
+                    document.getElementById('header-total').textContent = this.formatDuration(total);
+                }
+            }
+
+            updateCurrentStatus(status) {
+                // Mettre à jour le statut actuel si nécessaire
+                console.log('Statut actuel:', status);
+            }
+
+            updateStats(deployments) {
+                const successCount = deployments.filter(d => d.status === 'success').length;
+                const successRate = deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0;
+                
+                document.getElementById('success-rate').textContent = `${successRate}%`;
+                document.getElementById('total-pipelines').textContent = deployments.length;
+                
+                // Calculer la durée moyenne basée sur les vrais déploiements
+                if (deployments.length > 0) {
+                    // Pour l'instant, afficher le nombre de déploiements
+                    document.getElementById('avg-duration').textContent = `${deployments.length} déploiements`;
+                } else {
+                    document.getElementById('avg-duration').textContent = '--';
+                }
+            }
+
+            formatDuration(seconds) {
+                if (seconds === 0) return '--';
+                if (seconds < 60) return `${seconds}s`;
+                if (seconds < 3600) {
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    return `${minutes}min ${remainingSeconds}s`;
+                }
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                return `${hours}h ${minutes}min`;
+            }
+
+            parseDuration(durationStr) {
+                if (durationStr === '--') return 0;
+                if (durationStr.includes('h')) {
+                    const [hours, minutes] = durationStr.split('h ');
+                    return parseInt(hours) * 3600 + parseInt(minutes.replace('min', '')) * 60;
+                }
+                if (durationStr.includes('min')) {
+                    const [minutes, seconds] = durationStr.split('min ');
+                    return parseInt(minutes) * 60 + parseInt(seconds.replace('s', ''));
+                }
+                return parseInt(durationStr.replace('s', ''));
+            }
+
+            clearData() {
+                document.getElementById('pipeline-rows').innerHTML = '<div class="p-8 text-center text-gray-500">Données effacées</div>';
+                document.getElementById('success-rate').textContent = '--';
+                document.getElementById('avg-duration').textContent = '--';
+                document.getElementById('total-pipelines').textContent = '--';
+            }
+
+            showError(message) {
+                const container = document.getElementById('pipeline-rows');
+                container.innerHTML = `
+                    <div class="p-8 text-center">
+                        <div class="text-red-500 text-lg mb-2">❌ Erreur</div>
+                        <div class="text-gray-600">${message}</div>
+                        <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            🔄 Recharger la page
+                        </button>
+                    </div>
+                `;
+            }
+
+            showLoading() {
+                const container = document.getElementById('pipeline-rows');
+                container.innerHTML = `
+                    <div class="p-8 text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                        <div class="text-gray-600">Chargement des données...</div>
+                    </div>
+                `;
+            }
+
+
+
+            animateRows() {
+                const rows = document.querySelectorAll('.grid.grid-cols-7:not(.bg-gray-50)');
+                rows.forEach((row, index) => {
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        row.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                        row.style.opacity = '1';
+                        row.style.transform = 'translateY(0)';
+                    }, index * 100);
+                });
             }
 
             startAutoRefresh() {
                 this.stopAutoRefresh();
                 this.autoRefreshInterval = setInterval(() => {
-                    this.loadStatus();
-                    this.loadLogs();
-                }, 5000);
+                    this.loadData();
+                }, 10000); // Actualisation toutes les 10 secondes
             }
 
             stopAutoRefresh() {
@@ -512,7 +405,25 @@
 
         // Initialiser le dashboard quand la page est chargée
         document.addEventListener('DOMContentLoaded', () => {
-            new DeploymentDashboard();
+            new PipelineDashboard();
+        });
+
+        // Effet hover sur les stages
+        document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('mouseover', function(e) {
+                if (e.target.closest('.bg-stage-success')) {
+                    const stage = e.target.closest('.bg-stage-success');
+                    stage.style.transform = 'scale(1.02)';
+                    stage.style.transition = 'transform 0.2s ease';
+                }
+            });
+            
+            document.addEventListener('mouseout', function(e) {
+                if (e.target.closest('.bg-stage-success')) {
+                    const stage = e.target.closest('.bg-stage-success');
+                    stage.style.transform = 'scale(1)';
+                }
+            });
         });
     </script>
 </body>
