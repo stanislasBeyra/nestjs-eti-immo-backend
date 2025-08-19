@@ -114,7 +114,9 @@
             }
 
             init() {
+                console.log('🚀 Initialisation du dashboard...');
                 this.setupEventListeners();
+                this.showLoading();
                 this.loadData();
                 this.startAutoRefresh();
             }
@@ -138,40 +140,65 @@
             }
 
             async loadData() {
+                console.log('🔄 Chargement des données...');
+                
                 try {
                     // Charger l'historique des déploiements
+                    console.log('📚 Chargement de l\'historique...');
                     const historyResponse = await fetch('/api/deploy/history');
+                    console.log('📚 Réponse historique:', historyResponse.status, historyResponse.ok);
+                    
                     if (historyResponse.ok) {
                         const history = await historyResponse.json();
+                        console.log('📚 Données historiques:', history);
                         this.updatePipelineRows(history);
+                    } else {
+                        console.error('❌ Erreur historique:', historyResponse.status, historyResponse.statusText);
                     }
 
                     // Charger les durées actuelles
+                    console.log('⏱️ Chargement des durées...');
                     const durationsResponse = await fetch('/api/deploy/durations');
+                    console.log('⏱️ Réponse durées:', durationsResponse.status, durationsResponse.ok);
+                    
                     if (durationsResponse.ok) {
                         const durations = await durationsResponse.json();
+                        console.log('⏱️ Données durées:', durations);
                         this.updateHeaderDurations(durations);
+                    } else {
+                        console.error('❌ Erreur durées:', durationsResponse.status, durationsResponse.statusText);
                     }
 
                     // Charger le statut actuel
+                    console.log('📊 Chargement du statut...');
                     const statusResponse = await fetch('/api/deploy/status');
+                    console.log('📊 Réponse statut:', statusResponse.status, statusResponse.ok);
+                    
                     if (statusResponse.ok) {
                         const status = await statusResponse.json();
+                        console.log('📊 Données statut:', status);
                         this.updateCurrentStatus(status);
+                    } else {
+                        console.error('❌ Erreur statut:', statusResponse.status, statusResponse.statusText);
                     }
 
                 } catch (error) {
-                    console.error('Erreur lors du chargement des données:', error);
+                    console.error('❌ Erreur lors du chargement des données:', error);
+                    this.showError('Erreur de chargement: ' + error.message);
                 }
             }
 
             updatePipelineRows(history) {
                 const container = document.getElementById('pipeline-rows');
+                console.log('🔄 Mise à jour des lignes de pipeline avec:', history);
                 
                 if (!history.deployments || history.deployments.length === 0) {
-                    container.innerHTML = '<div class="p-8 text-center text-gray-500">Aucun déploiement dans l\'historique</div>';
+                    console.log('⚠️ Aucun déploiement trouvé, affichage des données de test');
+                    this.showTestData();
                     return;
                 }
+
+                console.log(`✅ ${history.deployments.length} déploiements trouvés, génération des lignes...`);
 
                 const rowsHTML = history.deployments.map(deployment => {
                     const date = new Date(deployment.timestamp);
@@ -301,6 +328,127 @@
                 document.getElementById('success-rate').textContent = '--';
                 document.getElementById('avg-duration').textContent = '--';
                 document.getElementById('total-pipelines').textContent = '--';
+            }
+
+            showError(message) {
+                const container = document.getElementById('pipeline-rows');
+                container.innerHTML = `
+                    <div class="p-8 text-center">
+                        <div class="text-red-500 text-lg mb-2">❌ Erreur</div>
+                        <div class="text-gray-600">${message}</div>
+                        <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                            🔄 Recharger la page
+                        </button>
+                    </div>
+                `;
+            }
+
+            showLoading() {
+                const container = document.getElementById('pipeline-rows');
+                container.innerHTML = `
+                    <div class="p-8 text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                        <div class="text-gray-600">Chargement des données...</div>
+                    </div>
+                `;
+            }
+
+            showTestData() {
+                const container = document.getElementById('pipeline-rows');
+                console.log('📊 Affichage des données de test...');
+                
+                const testData = [
+                    {
+                        timestamp: new Date().toISOString(),
+                        commit: 'abc123',
+                        status: 'success'
+                    },
+                    {
+                        timestamp: new Date(Date.now() - 3600000).toISOString(),
+                        commit: 'def456',
+                        status: 'success'
+                    }
+                ];
+
+                const rowsHTML = testData.map(deployment => {
+                    const date = new Date(deployment.timestamp);
+                    const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
+                    const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    // Données de test avec des durées réalistes
+                    const gitDuration = '1s';
+                    const depsDuration = '1s';
+                    const buildDuration = '1min 48s';
+                    const cleanDuration = '7s';
+                    const restartDuration = '1min 24s';
+                    const totalDuration = '3min 21s';
+
+                    return `
+                        <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
+                            <div class="p-4 flex items-center justify-center">
+                                <div class="text-center">
+                                    <div class="text-xs text-text-muted">${dateStr}</div>
+                                    <div class="text-xs text-text-muted">${timeStr}</div>
+                                    <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${deployment.commit}</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${gitDuration}</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${depsDuration}</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
+                                    <div class="font-medium text-green-800">${buildDuration}</div>
+                                    <div class="absolute top-0 left-0 bg-blue-500 h-1 w-3/4 rounded-t-lg"></div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${cleanDuration}</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
+                                    <div class="font-medium text-green-800">${restartDuration}</div>
+                                    <div class="absolute top-0 left-0 bg-blue-500 h-1 w-4/5 rounded-t-lg"></div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
+                                    <div class="font-medium text-green-800">${totalDuration}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = rowsHTML;
+                this.updateStats(testData);
+                this.animateRows();
+                
+                // Afficher un message informatif
+                container.insertAdjacentHTML('afterbegin', `
+                    <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm">
+                                    <strong>Info:</strong> Affichage des données de test. Lancez un déploiement pour voir les vraies données.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `);
             }
 
             animateRows() {
