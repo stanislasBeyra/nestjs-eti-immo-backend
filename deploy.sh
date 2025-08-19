@@ -133,11 +133,13 @@ save_step_durations() {
 
 # Mettre à jour le statut initial
 update_status "starting" "Déploiement en cours..."
+save_deployment_history "starting" "Déploiement en cours..."
 
 # Étape 1: Synchronisation Git
 echo "[1/5] 📥 Synchronisation Git..." >> $LOG_FILE 2>&1
 GIT_START_TIME=$(date +%s)
 update_status "pulling" "Synchronisation avec le dépôt distant..."
+save_deployment_history "pulling" "Synchronisation Git en cours..."
 
 # Récupérer les dernières modifications (gestion des branches divergentes)
 echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
@@ -156,6 +158,7 @@ echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
 if ! git fetch origin >> $LOG_FILE 2>&1; then
     echo "❌ Erreur lors du fetch Git" >> $LOG_FILE 2>&1
     update_status "error" "Erreur lors du fetch Git"
+    save_deployment_history "error" "Erreur lors du fetch Git"
     exit 1
 fi
 
@@ -166,8 +169,9 @@ if ! git reset --hard origin/$BRANCH >> $LOG_FILE 2>&1; then
     if ! git reset --hard origin/$BRANCH >> $LOG_FILE 2>&1; then
         echo "❌ Erreur lors du reset Git" >> $LOG_FILE 2>&1
         update_status "error" "Erreur lors du reset Git"
+        save_deployment_history "error" "Erreur lors du reset Git"
         exit 1
-fi
+    fi
 fi
 
 # Restaurer les modifications locales si nécessaire
@@ -182,6 +186,7 @@ echo "✅ Synchronisation Git réussie" >> $LOG_FILE 2>&1
 echo "[2/5] 📦 Installation des dépendances..." >> $LOG_FILE 2>&1
 DEPS_START_TIME=$(date +%s)
 update_status "installing" "Installation des dépendances..."
+save_deployment_history "installing" "Installation des dépendances..."
 
 # Aller dans le dossier de l'application
 cd $APP_DIR
@@ -194,6 +199,7 @@ if command -v npm >/dev/null 2>&1; then
     else
         echo "❌ Erreur lors de l'installation des dépendances" >> $LOG_FILE 2>&1
         update_status "error" "Erreur lors de l'installation des dépendances"
+        save_deployment_history "error" "Erreur lors de l'installation des dépendances"
         exit 1
     fi
 else
@@ -205,6 +211,7 @@ fi
 echo "[3/5] 🔨 Compilation du projet..." >> $LOG_FILE 2>&1
 BUILD_START_TIME=$(date +%s)
 update_status "building" "Compilation du projet..."
+save_deployment_history "building" "Compilation du projet..."
 
 # Rebuild du projet NestJS
 if command -v npm >/dev/null 2>&1; then
@@ -223,6 +230,7 @@ if command -v npm >/dev/null 2>&1; then
     else
         echo "❌ Erreur lors du build" >> $LOG_FILE 2>&1
         update_status "error" "Erreur lors du build"
+        save_deployment_history "error" "Erreur lors du build"
         exit 1
     fi
 else
@@ -234,6 +242,7 @@ fi
 echo "[4/5] 🔧 Nettoyage et optimisation..." >> $LOG_FILE 2>&1
 CLEAN_START_TIME=$(date +%s)
 update_status "cleaning" "Nettoyage et optimisation..."
+save_deployment_history "cleaning" "Nettoyage et optimisation..."
 
 # Nettoyer les fichiers temporaires
 echo "🧹 Nettoyage des fichiers temporaires..." >> $LOG_FILE 2>&1
@@ -248,9 +257,10 @@ chmod -R 644 $APP_DIR/dist/**/*.js 2>/dev/null || true
 echo "✅ Nettoyage terminé" >> $LOG_FILE 2>&1
 
 # Étape 5: Redémarrage de l'application
-echo "[4/5] 🔄 Redémarrage de l'application..." >> $LOG_FILE 2>&1
+echo "[5/5] 🔄 Redémarrage de l'application..." >> $LOG_FILE 2>&1
 RESTART_START_TIME=$(date +%s)
 update_status "restarting" "Redémarrage de l'application..."
+save_deployment_history "restarting" "Redémarrage de l'application..."
 
 # Redémarrer Passenger (cPanel)
 echo "🔄 Redémarrage via Passenger..." >> $LOG_FILE 2>&1
@@ -268,19 +278,10 @@ sleep 10
 
 echo "✅ Déploiement terminé avec succès le $(date)" >> $LOG_FILE 2>&1
 update_status "success" "Déploiement terminé avec succès"
+save_deployment_history "success" "Déploiement terminé avec succès"
 
 # Calculer et sauvegarder les durées des étapes
 save_step_durations
-
-# Sauvegarder l'historique avec toutes les informations du déploiement
-local current_time=$(date +%s)
-local git_duration=$((DEPS_START_TIME - GIT_START_TIME))
-local deps_duration=$((BUILD_START_TIME - DEPS_START_TIME))
-local build_duration=$((CLEAN_START_TIME - BUILD_START_TIME))
-local clean_duration=$((RESTART_START_TIME - CLEAN_START_TIME))
-local restart_duration=$((current_time - RESTART_START_TIME))
-
-save_deployment_history "success" "Déploiement terminé avec succès - Git: ${git_duration}s, Déps: ${deps_duration}s, Build: ${build_duration}s, Clean: ${clean_duration}s, Restart: ${restart_duration}s"
 
 # Informations finales
 echo "🎉 Déploiement réussi !" >> $LOG_FILE 2>&1
