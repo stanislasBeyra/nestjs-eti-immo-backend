@@ -84,9 +84,9 @@ export class DeployController {
       });
     }
   }
-  @Get('test')
+  @Get('testsssss')
   async getTest(@Res() res: Response) {
-    return res.send('Test success');
+    return res.send('Test success' + ' ' + __dirname);
   }
 
   @Post('webhook')
