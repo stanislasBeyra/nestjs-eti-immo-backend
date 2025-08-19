@@ -186,29 +186,182 @@
                 try {
                     const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/history');
                     if (response.ok) {
-                        const deployments = await response.json();
-                        this.updateHistoryDisplay(deployments);
-                        this.updateStats(deployments);
+                        const responseText = await response.text();
+                        console.log('📄 Réponse brute de l\'API:', responseText.substring(0, 200) + '...');
+                        
+                        // Essayer de parser le JSON
+                        let deployments;
+                        try {
+                            deployments = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error('❌ Erreur de parsing JSON:', parseError);
+                            console.error('📄 Contenu problématique:', responseText);
+                            
+                            // Essayer de nettoyer le JSON - méthode manuelle pour ce cas spécifique
+                            const cleanedJson = this.fixMalformedJson(responseText);
+                            console.log('🔧 JSON après nettoyage:', cleanedJson.substring(0, 200) + '...');
+                            
+                            try {
+                                deployments = JSON.parse(cleanedJson);
+                                console.log('✅ JSON nettoyé avec succès');
+                            } catch (secondError) {
+                                console.error('❌ Impossible de nettoyer le JSON:', secondError);
+                                
+                                // Dernière tentative: parsing manuel des objets
+                                try {
+                                    deployments = this.parseJsonManually(responseText);
+                                    console.log('✅ Parsing manuel réussi');
+                                } catch (manualError) {
+                                    console.error('❌ Parsing manuel échoué:', manualError);
+                                    this.showHistoryError('Format JSON invalide');
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        if (deployments) {
+                            this.updateHistoryDisplay(deployments);
+                            this.updateStats(deployments);
+                        }
+                    } else {
+                        console.error('❌ Erreur API:', response.status, response.statusText);
+                        this.showHistoryError(`Erreur ${response.status}: ${response.statusText}`);
                     }
                 } catch (error) {
                     console.error('❌ Erreur lors du chargement de l\'historique:', error);
+                    this.showHistoryError('Erreur de connexion');
                 }
+            }
+
+            fixMalformedJson(jsonString) {
+                // Correction spécifique pour le problème identifié
+                return jsonString
+                    // Remplacer tous les \n littéraux dans le JSON par des espaces
+                    .replace(/\\n/g, ' ')
+                    // Nettoyer les sauts de ligne réels
+                    .replace(/\r\n/g, ' ')
+                    .replace(/\n/g, ' ')
+                    .replace(/\r/g, ' ')
+                    // Nettoyer les espaces multiples
+                    .replace(/\s+/g, ' ')
+                    // Nettoyer les espaces autour des structures JSON
+                    .replace(/\s*{\s*/g, '{')
+                    .replace(/\s*}\s*/g, '}')
+                    .replace(/\s*\[\s*/g, '[')
+                    .replace(/\s*\]\s*/g, ']')
+                    .replace(/\s*:\s*/g, ':')
+                    .replace(/\s*,\s*/g, ',')
+                    .trim();
+            }
+
+            parseJsonManually(jsonString) {
+                // Parsing manuel en cas d'échec total
+                try {
+                    // Extraire les objets un par un avec une regex
+                    const objectMatches = jsonString.match(/\{[^{}]*\}/g);
+                    if (!objectMatches) return [];
+
+                    const deployments = [];
+                    for (const objStr of objectMatches) {
+                        try {
+                            const cleanObj = this.fixMalformedJson(objStr);
+                            const obj = JSON.parse(cleanObj);
+                            deployments.push(obj);
+                        } catch (e) {
+                            console.warn('⚠️ Objet ignoré:', objStr);
+                        }
+                    }
+                    
+                    return deployments;
+                } catch (error) {
+                    console.error('❌ Parsing manuel échoué:', error);
+                    return [];
+                }
+            }
+
+            cleanJsonResponse(jsonString) {
+                // Nettoyer les problèmes courants de format JSON
+                let cleaned = jsonString
+                    // PROBLÈME PRINCIPAL: Supprimer les \n au milieu des chaînes JSON
+                    .replace(/,\s*\\n/g, ', ')
+                    .replace(/\\n"/g, '"')
+                    .replace(/"\s*\\n/g, '", ')
+                    // Nettoyer les sauts de ligne réels dans le JSON
+                    .replace(/,\s*\n/g, ', ')
+                    .replace(/\n"/g, '"')
+                    .replace(/"\s*\n/g, '", ')
+                    // Supprimer tous les sauts de ligne et espaces multiples
+                    .replace(/\s+/g, ' ')
+                    .replace(/,\s*,/g, ',')
+                    // Remplacer les guillemets simples par des doubles
+                    .replace(/'/g, '"')
+                    // Corriger les propriétés sans guillemets
+                    .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3')
+                    // Corriger les dates mal formatées
+                    .replace(/"timestamp":\s*"([^"]*)"([^,}]*)/g, '"timestamp": "$1"')
+                    // Supprimer les virgules en trop
+                    .replace(/,\s*}/g, '}')
+                    .replace(/,\s*]/g, ']')
+                    // Nettoyer les espaces autour des deux-points et virgules
+                    .replace(/\s*:\s*/g, ': ')
+                    .replace(/\s*,\s*/g, ', ');
+                
+                return cleaned.trim();
+            }
+
+            showHistoryError(message) {
+                document.getElementById('pipeline-rows').innerHTML = `
+                    <div class="p-8 text-center">
+                        <div class="text-red-500 mb-2">❌ ${message}</div>
+                        <button onclick="dashboard.loadHistory()" class="text-blue-500 hover:text-blue-700">
+                            🔄 Réessayer
+                        </button>
+                    </div>
+                `;
             }
 
             async checkCurrentStatus() {
                 try {
                     const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/status');
                     if (response.ok) {
-                        const status = await response.json();
+                        const responseText = await response.text();
+                        console.log('📊 Statut brut:', responseText);
+                        
+                        let status;
+                        try {
+                            status = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error('❌ Erreur parsing statut:', parseError);
+                            // Créer un statut par défaut
+                            status = {
+                                status: 'unknown',
+                                message: 'Statut indisponible',
+                                timestamp: new Date().toISOString()
+                            };
+                        }
+                        
                         this.updateCurrentStatus(status);
                         
                         // Si un déploiement est en cours, charger les détails
-                        if (status.status !== 'success' && status.status !== 'error') {
+                        if (status.status !== 'success' && status.status !== 'error' && status.status !== 'unknown') {
                             await this.loadCurrentDeployment();
                         }
+                    } else {
+                        console.error('❌ Erreur statut API:', response.status);
+                        // Statut par défaut en cas d'erreur
+                        this.updateCurrentStatus({
+                            status: 'error',
+                            message: 'Impossible de récupérer le statut',
+                            timestamp: new Date().toISOString()
+                        });
                     }
                 } catch (error) {
                     console.error('❌ Erreur lors de la vérification du statut:', error);
+                    this.updateCurrentStatus({
+                        status: 'error', 
+                        message: 'Erreur de connexion',
+                        timestamp: new Date().toISOString()
+                    });
                 }
             }
 
@@ -356,36 +509,56 @@
                     return;
                 }
 
-                const sortedDeployments = [...deployments].sort((a, b) => {
-                    return new Date(b.created_at) - new Date(a.created_at);
+                // S'assurer que deployments est un tableau
+                const deploymentsArray = Array.isArray(deployments) ? deployments : 
+                                       (deployments.deployments ? deployments.deployments : [deployments]);
+
+                const sortedDeployments = [...deploymentsArray].sort((a, b) => {
+                    const dateA = new Date(a.created_at || a.timestamp || 0);
+                    const dateB = new Date(b.created_at || b.timestamp || 0);
+                    return dateB - dateA;
                 });
 
                 const rowsHTML = sortedDeployments.map((deployment) => {
-                    const date = new Date(deployment.created_at);
+                    // Gestion flexible des champs de date
+                    let date;
+                    try {
+                        date = new Date(deployment.created_at || deployment.timestamp || Date.now());
+                        if (isNaN(date.getTime())) {
+                            date = new Date();
+                        }
+                    } catch (e) {
+                        date = new Date();
+                    }
+
                     const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
                     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                    const commit = deployment.commit_hash ? deployment.commit_hash.slice(0, 8) : 'N/A';
+                    
+                    // Gestion flexible des champs
+                    const commit = (deployment.commit_hash || deployment.commit || 'N/A').toString().slice(0, 8);
                     const branch = deployment.branch || 'N/A';
+                    const finalStatus = deployment.final_status || deployment.status || 'unknown';
 
                     const createStageCell = (duration) => {
-                        const bgColor = deployment.final_status === 'success' ? 'bg-stage-success border-green-200' : 
-                                       deployment.final_status === 'error' ? 'bg-stage-error border-red-200' : 
+                        const safeTime = parseInt(duration) || 0;
+                        const bgColor = finalStatus === 'success' ? 'bg-stage-success border-green-200' : 
+                                       finalStatus === 'error' ? 'bg-stage-error border-red-200' : 
                                        'bg-stage-pending border-gray-200';
-                        const textColor = deployment.final_status === 'success' ? 'text-green-800' : 
-                                         deployment.final_status === 'error' ? 'text-red-800' : 
+                        const textColor = finalStatus === 'success' ? 'text-green-800' : 
+                                         finalStatus === 'error' ? 'text-red-800' : 
                                          'text-gray-800';
 
                         return `
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="${bgColor} rounded-lg p-4 w-full text-center border">
-                                    <div class="font-medium ${textColor}">${this.formatDuration(duration)}</div>
+                                    <div class="font-medium ${textColor}">${this.formatDuration(safeTime)}</div>
                                 </div>
                             </div>
                         `;
                     };
 
-                    const statusIcon = deployment.final_status === 'success' ? '✅' : 
-                                      deployment.final_status === 'error' ? '❌' : '⏳';
+                    const statusIcon = finalStatus === 'success' ? '✅' : 
+                                      finalStatus === 'error' ? '❌' : '⏳';
 
                     return `
                         <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
@@ -404,12 +577,12 @@
                                     </div>
                                 </div>
                             </div>
-                            ${createStageCell(deployment.pulling_time)}
-                            ${createStageCell(deployment.installing_time)}
-                            ${createStageCell(deployment.building_time)}
-                            ${createStageCell(deployment.cleaning_time)}
-                            ${createStageCell(deployment.restarting_time)}
-                            ${createStageCell(deployment.total_time)}
+                            ${createStageCell(deployment.pulling_time || deployment.git || 0)}
+                            ${createStageCell(deployment.installing_time || deployment.dependencies || 0)}
+                            ${createStageCell(deployment.building_time || deployment.build || 0)}
+                            ${createStageCell(deployment.cleaning_time || deployment.clean || 0)}
+                            ${createStageCell(deployment.restarting_time || deployment.restart || 0)}
+                            ${createStageCell(deployment.total_time || deployment.total || 0)}
                         </div>
                     `;
                 }).join('');
@@ -444,17 +617,29 @@
 
             async showLogs() {
                 document.getElementById('logs-modal').classList.remove('hidden');
+                document.getElementById('logs-content').textContent = 'Chargement des logs...';
                 
                 try {
                     const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/logs');
                     if (response.ok) {
                         const logs = await response.text();
-                        document.getElementById('logs-content').textContent = logs;
+                        // Nettoyer et formater les logs
+                        const cleanLogs = logs
+                            .replace(/\r\n/g, '\n')
+                            .replace(/\r/g, '\n')
+                            .trim();
+                        
+                        document.getElementById('logs-content').textContent = cleanLogs || 'Aucun log disponible';
+                        
+                        // Auto-scroll vers le bas
+                        const logsContent = document.getElementById('logs-content');
+                        logsContent.scrollTop = logsContent.scrollHeight;
                     } else {
-                        document.getElementById('logs-content').textContent = 'Erreur lors du chargement des logs';
+                        document.getElementById('logs-content').textContent = `Erreur ${response.status}: ${response.statusText}`;
                     }
                 } catch (error) {
-                    document.getElementById('logs-content').textContent = 'Erreur de connexion pour les logs';
+                    console.error('❌ Erreur logs:', error);
+                    document.getElementById('logs-content').textContent = `Erreur de connexion: ${error.message}`;
                 }
             }
 
@@ -509,7 +694,6 @@
                 dashboard.loadHistory();
             }
         });
-        
     </script>
 </body>
 </html>
