@@ -61,29 +61,53 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
                 echo "{\"status\": \"$1\", \"message\": \"$2\", \"timestamp\": \"$(date)\"}" > $STATUS_FILE
             }
 
-            # Fonction pour sauvegarder l'historique
+                        # Fonction pour sauvegarder l'historique
             save_deployment_history() {
                 local status=$1
                 local message=$2
                 local history_file=$APP_DIR/public/deploy-history.json
                 
+                echo "💾 Sauvegarde de l'historique: $status - $message" >> $LOG_FILE 2>&1
+                
                 # Créer le fichier d'historique s'il n'existe pas
                 if [ ! -f "$history_file" ]; then
                     echo '{"deployments": []}' > "$history_file"
+                    echo "📁 Fichier d'historique créé: $history_file" >> $LOG_FILE 2>&1
                 fi
                 
                 # Lire l'historique existant
                 local history_content=$(cat "$history_file")
+                echo "📖 Historique existant lu: $history_content" >> $LOG_FILE 2>&1
                 
                 # Créer la nouvelle entrée
-                local new_entry="{\"id\": \"$(date +%s)\", \"status\": \"$status\", \"message\": \"$message\", \"timestamp\": \"$(date)\", \"branch\": \"$BRANCH\", \"commit\": \"$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')\"}"
+                local commit_hash=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')
+                local new_entry="{\"id\": \"$(date +%s)\", \"status\": \"$status\", \"message\": \"$message\", \"timestamp\": \"$(date)\", \"branch\": \"$BRANCH\", \"commit\": \"$commit_hash\"}"
+                
+                echo "🆕 Nouvelle entrée: $new_entry" >> $LOG_FILE 2>&1
                 
                 # Ajouter la nouvelle entrée au début de l'historique
-                local updated_history=$(echo "$history_content" | jq --argjson entry "$new_entry" '.deployments = [$entry] + .deployments[0:9]' 2>/dev/null || echo "$history_content")
+                # Utiliser une approche plus simple sans jq
+                if [ "$history_content" = '{"deployments": []}' ]; then
+                    # Premier déploiement
+                    local updated_history="{\"deployments\": [$new_entry]}"
+                else
+                    # Ajouter au début
+                    local updated_history=$(echo "$history_content" | sed 's/\[/['"$new_entry"',/')
+                fi
                 
-                            # Sauvegarder l'historique mis à jour
-            echo "$updated_history" > "$history_file"
-        }
+                echo "📝 Historique mis à jour: $updated_history" >> $LOG_FILE 2>&1
+                
+                # Sauvegarder l'historique mis à jour
+                echo "$updated_history" > "$history_file"
+                
+                # Vérifier que le fichier a été écrit
+                if [ -f "$history_file" ]; then
+                    echo "✅ Historique sauvegardé avec succès dans: $history_file" >> $LOG_FILE 2>&1
+                    echo "📊 Contenu final: $(cat "$history_file")" >> $LOG_FILE 2>&1
+                else
+                    echo "❌ Erreur: Impossible de sauvegarder l'historique" >> $LOG_FILE 2>&1
+                fi
+            }
 
         # Fonction pour calculer et sauvegarder les durées des étapes
         save_step_durations() {
