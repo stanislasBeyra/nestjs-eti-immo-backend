@@ -195,23 +195,45 @@
 
                 console.log(`✅ ${history.deployments.length} déploiements trouvés, génération des lignes...`);
 
-                const rowsHTML = history.deployments.map(deployment => {
-                    const date = new Date(deployment.timestamp);
+                // Grouper les déploiements par commit
+                const deploymentsByCommit = {};
+                history.deployments.forEach(deployment => {
+                    const commit = deployment.commit || 'N/A';
+                    if (!deploymentsByCommit[commit]) {
+                        deploymentsByCommit[commit] = [];
+                    }
+                    deploymentsByCommit[commit].push(deployment);
+                });
+
+                console.log('📊 Déploiements groupés par commit:', deploymentsByCommit);
+
+                const rowsHTML = Object.entries(deploymentsByCommit).map(([commit, deployments]) => {
+                    // Prendre le premier déploiement pour les informations de base
+                    const firstDeployment = deployments[0];
+                    const date = new Date(firstDeployment.timestamp);
                     const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
                     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                     
-                    // Utiliser les vraies données du déploiement
-                    const status = deployment.status || 'unknown';
-                    const message = deployment.message || 'N/A';
-                    const commit = deployment.commit || 'N/A';
+                    // Trouver le statut final (success ou error)
+                    const finalStatus = deployments.find(d => d.status === 'success' || d.status === 'error')?.status || 'unknown';
                     
-                    // Pour l'instant, afficher des durées de base
-                    const gitDuration = '--';
-                    const depsDuration = '--';
-                    const buildDuration = '--';
-                    const cleanDuration = '--';
-                    const restartDuration = '--';
-                    const totalDuration = '--';
+                    // Créer les cellules pour chaque étape
+                    const createStageCell = (stageStatus, stageMessage, duration = '--') => {
+                        const isCompleted = deployments.some(d => d.status === stageStatus);
+                        const isSuccess = isCompleted && stageStatus !== 'error';
+                        const bgColor = isCompleted ? (isSuccess ? 'bg-stage-success border-green-200' : 'bg-stage-error border-red-200') : 'bg-gray-100 border-gray-200';
+                        const textColor = isCompleted ? (isSuccess ? 'text-green-800' : 'text-red-800') : 'text-gray-500';
+                        
+                        return `
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="${bgColor} rounded-lg p-6 w-full text-center border ${isCompleted ? '' : 'border-dashed'}">
+                                    <div class="font-medium ${textColor}">${duration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">${stageMessage}</div>
+                                    ${isCompleted ? `<div class="text-xs ${isSuccess ? 'text-green-600' : 'text-red-600'} mt-1">✓</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    };
 
                     return `
                         <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
@@ -220,43 +242,18 @@
                                     <div class="text-xs text-text-muted">${dateStr}</div>
                                     <div class="text-xs text-text-muted">${timeStr}</div>
                                     <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${commit}</div>
-                                    <div class="text-xs text-gray-500 mt-1">${message}</div>
-                                    <div class="text-xs ${this.getStatusColor(status)} mt-1 font-medium">${this.getStatusText(status)}</div>
+                                    <div class="text-xs text-gray-500 mt-1">${deployments.length} étapes</div>
+                                    <div class="text-xs ${this.getStatusColor(finalStatus)} mt-1 font-medium">${this.getStatusText(finalStatus)}</div>
                                 </div>
                             </div>
+                            ${createStageCell('pulling', 'Git Sync')}
+                            ${createStageCell('installing', 'Deps')}
+                            ${createStageCell('building', 'Build')}
+                            ${createStageCell('cleaning', 'Clean')}
+                            ${createStageCell('restarting', 'Restart')}
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${gitDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Git Sync</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${depsDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Deps</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
-                                    <div class="font-medium text-green-800">${buildDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Build</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${cleanDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Clean</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
-                                    <div class="font-medium text-green-800">${restartDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Restart</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${totalDuration}</div>
+                                    <div class="font-medium text-green-800">--</div>
                                     <div class="text-xs text-gray-600 mt-1">Total</div>
                                 </div>
                             </div>
