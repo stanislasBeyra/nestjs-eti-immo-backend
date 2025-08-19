@@ -89,6 +89,11 @@ export class DeployController {
     return res.send('Test success' + ' ' + __dirname);
   }
 
+  @Get('/reussie')
+  async getReussie(@Res() res: Response) {
+    return res.send('Reussie');
+  }
+
   @Post('webhook')
   async handleWebhook(@Body() payload: any, @Headers('x-hub-signature-256') signature: string) {
     try {
