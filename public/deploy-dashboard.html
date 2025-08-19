@@ -193,8 +193,16 @@
                 console.log('🔄 Mise à jour des lignes de pipeline avec:', history);
                 
                 if (!history.deployments || history.deployments.length === 0) {
-                    console.log('⚠️ Aucun déploiement trouvé, affichage des données de test');
-                    this.showTestData();
+                    console.log('⚠️ Aucun déploiement trouvé');
+                    container.innerHTML = `
+                        <div class="p-8 text-center">
+                            <div class="text-gray-500 text-lg mb-2">📭 Aucun déploiement</div>
+                            <div class="text-gray-400">Lancez votre premier déploiement pour voir les données</div>
+                            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                🔄 Actualiser
+                            </button>
+                        </div>
+                    `;
                     return;
                 }
 
@@ -205,17 +213,19 @@
                     const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
                     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                     
-                    // Simuler des durées pour l'instant (à remplacer par les vraies données)
-                    const gitDuration = this.formatDuration(Math.floor(Math.random() * 5) + 1);
-                    const depsDuration = this.formatDuration(Math.floor(Math.random() * 10) + 1);
-                    const buildDuration = this.formatDuration(Math.floor(Math.random() * 120) + 30);
-                    const cleanDuration = this.formatDuration(Math.floor(Math.random() * 15) + 5);
-                    const restartDuration = this.formatDuration(Math.floor(Math.random() * 60) + 20);
+                    // Utiliser les vraies données du déploiement
+                    // Pour l'instant, on affiche le statut et le message
+                    // Les durées seront ajoutées quand l'API les fournira
+                    const status = deployment.status;
+                    const message = deployment.message;
                     
-                    const totalSeconds = this.parseDuration(gitDuration) + this.parseDuration(depsDuration) + 
-                                      this.parseDuration(buildDuration) + this.parseDuration(cleanDuration) + 
-                                      this.parseDuration(restartDuration);
-                    const totalDuration = this.formatDuration(totalSeconds);
+                    // Formatage basique des durées (à améliorer avec les vraies données)
+                    const gitDuration = '--';
+                    const depsDuration = '--';
+                    const buildDuration = '--';
+                    const cleanDuration = '--';
+                    const restartDuration = '--';
+                    const totalDuration = '--';
 
                     return `
                         <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
@@ -224,38 +234,43 @@
                                     <div class="text-xs text-text-muted">${dateStr}</div>
                                     <div class="text-xs text-text-muted">${timeStr}</div>
                                     <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${deployment.commit || 'N/A'}</div>
+                                    <div class="text-xs text-gray-500 mt-1">${message}</div>
                                 </div>
                             </div>
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
                                     <div class="font-medium text-green-800">${gitDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Git Sync</div>
                                 </div>
                             </div>
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
                                     <div class="font-medium text-green-800">${depsDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Deps</div>
                                 </div>
                             </div>
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
                                     <div class="font-medium text-green-800">${buildDuration}</div>
-                                    <div class="absolute top-0 left-0 bg-blue-500 h-1 w-3/4 rounded-t-lg"></div>
+                                    <div class="text-xs text-gray-600 mt-1">Build</div>
                                 </div>
                             </div>
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
                                     <div class="font-medium text-green-800">${cleanDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Clean</div>
                                 </div>
                             </div>
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
                                     <div class="font-medium text-green-800">${restartDuration}</div>
-                                    <div class="absolute top-0 left-0 bg-blue-500 h-1 w-4/5 rounded-t-lg"></div>
+                                    <div class="text-xs text-gray-600 mt-1">Restart</div>
                                 </div>
                             </div>
                             <div class="p-4 border-l flex items-center justify-center">
                                 <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
                                     <div class="font-medium text-green-800">${totalDuration}</div>
+                                    <div class="text-xs text-gray-600 mt-1">Total</div>
                                 </div>
                             </div>
                         </div>
@@ -293,8 +308,13 @@
                 document.getElementById('success-rate').textContent = `${successRate}%`;
                 document.getElementById('total-pipelines').textContent = deployments.length;
                 
-                // Calculer la durée moyenne (simulation pour l'instant)
-                document.getElementById('avg-duration').textContent = '~3m 25s';
+                // Calculer la durée moyenne basée sur les vrais déploiements
+                if (deployments.length > 0) {
+                    // Pour l'instant, afficher le nombre de déploiements
+                    document.getElementById('avg-duration').textContent = `${deployments.length} déploiements`;
+                } else {
+                    document.getElementById('avg-duration').textContent = '--';
+                }
             }
 
             formatDuration(seconds) {
@@ -353,103 +373,7 @@
                 `;
             }
 
-            showTestData() {
-                const container = document.getElementById('pipeline-rows');
-                console.log('📊 Affichage des données de test...');
-                
-                const testData = [
-                    {
-                        timestamp: new Date().toISOString(),
-                        commit: 'abc123',
-                        status: 'success'
-                    },
-                    {
-                        timestamp: new Date(Date.now() - 3600000).toISOString(),
-                        commit: 'def456',
-                        status: 'success'
-                    }
-                ];
 
-                const rowsHTML = testData.map(deployment => {
-                    const date = new Date(deployment.timestamp);
-                    const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
-                    const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                    
-                    // Données de test avec des durées réalistes
-                    const gitDuration = '1s';
-                    const depsDuration = '1s';
-                    const buildDuration = '1min 48s';
-                    const cleanDuration = '7s';
-                    const restartDuration = '1min 24s';
-                    const totalDuration = '3min 21s';
-
-                    return `
-                        <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
-                            <div class="p-4 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="text-xs text-text-muted">${dateStr}</div>
-                                    <div class="text-xs text-text-muted">${timeStr}</div>
-                                    <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${deployment.commit}</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${gitDuration}</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${depsDuration}</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
-                                    <div class="font-medium text-green-800">${buildDuration}</div>
-                                    <div class="absolute top-0 left-0 bg-blue-500 h-1 w-3/4 rounded-t-lg"></div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${cleanDuration}</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
-                                    <div class="font-medium text-green-800">${restartDuration}</div>
-                                    <div class="absolute top-0 left-0 bg-blue-500 h-1 w-4/5 rounded-t-lg"></div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${totalDuration}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = rowsHTML;
-                this.updateStats(testData);
-                this.animateRows();
-                
-                // Afficher un message informatif
-                container.insertAdjacentHTML('afterbegin', `
-                    <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-blue-700">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm">
-                                    <strong>Info:</strong> Affichage des données de test. Lancez un déploiement pour voir les vraies données.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                `);
-            }
 
             animateRows() {
                 const rows = document.querySelectorAll('.grid.grid-cols-7:not(.bg-gray-50)');
