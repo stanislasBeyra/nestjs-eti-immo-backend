@@ -66,7 +66,7 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
             DEPLOYMENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')
             DEPLOYMENT_ID=$(date +%s)
             
-            # Fonction pour sauvegarder l'historique (un seul enregistrement par déploiement)
+            # Fonction pour sauvegarder l'historique (version ultra-simple et robuste)
             save_deployment_history() {
                 local status=$1
                 local message=$2
@@ -80,33 +80,39 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
                     echo "📁 Fichier d'historique créé: $history_file" >> $LOG_FILE 2>&1
                 fi
                 
-                # Lire l'historique existant
-                local history_content=$(cat "$history_file")
-                
-                # Créer ou mettre à jour l'entrée du déploiement en cours
+                # Créer l'entrée du déploiement
                 local deployment_entry="{\"id\": \"$DEPLOYMENT_ID\", \"status\": \"$status\", \"message\": \"$message\", \"timestamp\": \"$(date)\", \"branch\": \"$BRANCH\", \"commit\": \"$DEPLOYMENT_COMMIT\", \"start_time\": \"$DEPLOYMENT_START_TIME\"}"
                 
                 echo "🆕 Entrée du déploiement: $deployment_entry" >> $LOG_FILE 2>&1
                 
-                # Vérifier si ce déploiement existe déjà
-                if echo "$history_content" | grep -q "\"id\": \"$DEPLOYMENT_ID\""; then
-                    # Mettre à jour l'entrée existante
-                    echo "📝 Mise à jour de l'entrée existante" >> $LOG_FILE 2>&1
-                    local updated_history=$(echo "$history_content" | sed "s/\"id\": \"$DEPLOYMENT_ID\".*\"timestamp\": \"[^\"]*\"/$deployment_entry/")
-                else
-                    # Ajouter une nouvelle entrée au début
-                    echo "📝 Ajout d'une nouvelle entrée" >> $LOG_FILE 2>&1
-                    if [ "$history_content" = '{"deployments": []}' ]; then
-                        local updated_history="{\"deployments\": [$deployment_entry]}"
-                    else
-                        local updated_history=$(echo "$history_content" | sed 's/\[/['"$deployment_entry"',/')
-                    fi
+                # Approche ultra-simple : remplacer complètement le fichier
+                # Lire le contenu actuel
+                local current_content=$(cat "$history_file" 2>/dev/null || echo '{"deployments": []}')
+                
+                # Vérifier si c'est du JSON valide
+                if ! echo "$current_content" | grep -q '^[[:space:]]*{.*}[[:space:]]*$'; then
+                    echo "⚠️ JSON invalide détecté, réinitialisation..." >> $LOG_FILE 2>&1
+                    current_content='{"deployments": []}'
                 fi
                 
-                # Sauvegarder l'historique mis à jour
-                echo "$updated_history" > "$history_file"
+                # Si c'est le premier déploiement ou si le fichier est vide
+                if [ "$current_content" = '{"deployments": []}' ] || [ "$current_content" = "" ]; then
+                    echo "📝 Premier déploiement, création de l'entrée" >> $LOG_FILE 2>&1
+                    echo "{\"deployments\": [$deployment_entry]}" > "$history_file"
+                else
+                    # Ajouter au début (remplacer le premier [ par [nouvelle_entrée,)
+                    echo "📝 Ajout d'une nouvelle entrée" >> $LOG_FILE 2>&1
+                    local updated_content=$(echo "$current_content" | sed 's/\[/['"$deployment_entry"',/')
+                    echo "$updated_content" > "$history_file"
+                fi
                 
-                echo "✅ Historique mis à jour dans: $history_file" >> $LOG_FILE 2>&1
+                # Vérifier que le fichier est valide
+                if [ -f "$history_file" ]; then
+                    echo "✅ Historique mis à jour dans: $history_file" >> $LOG_FILE 2>&1
+                    echo "📊 Contenu: $(cat "$history_file")" >> $LOG_FILE 2>&1
+                else
+                    echo "❌ Erreur: Impossible de sauvegarder l'historique" >> $LOG_FILE 2>&1
+                fi
             }
 
         # Fonction pour calculer et sauvegarder les durées des étapes
