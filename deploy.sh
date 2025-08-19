@@ -7,6 +7,8 @@ LOG_FILE=$APP_DIR/deploy.log
 STATUS_FILE=$APP_DIR/public/deploy-status.json
 DEPLOYMENTS_FILE=$APP_DIR/public/deployments.json
 DEPLOYMENT_CURRENT_FILE=$APP_DIR/public/deploy-current.json
+# Nombre max d'éléments conservés dans l'historique (modifiable via env MAX_DEPLOYMENTS)
+MAX_DEPLOYMENTS=${MAX_DEPLOYMENTS:-100}
 
 # Variables pour le calcul des durées
 START_TIME=$(date +%s)
@@ -114,12 +116,30 @@ write_deployment_record() {
 
     # Ajouter à l'historique uniquement si finalisé
     if [ "$final" != "in_progress" ]; then
-        local current
-        current=$(cat "$DEPLOYMENTS_FILE" 2>/dev/null || echo "[]")
-        if [ "$current" = "[]" ]; then
-            echo "[$json]" > "$DEPLOYMENTS_FILE"
+        # Assurer que le fichier existe et est un JSON valide
+        if ! command -v jq >/dev/null 2>&1; then
+            # Fallback sans tronquage si jq indisponible
+            local current
+            current=$(cat "$DEPLOYMENTS_FILE" 2>/dev/null || echo "[]")
+            if [ "$current" = "[]" ]; then
+                echo "[$json]" > "$DEPLOYMENTS_FILE"
+            else
+                echo "$current" | sed 's/\]$/'", $json]"/ > "$DEPLOYMENTS_FILE"
+            fi
+            echo "⚠️ jq non trouvé, impossible de tronquer l'historique à $MAX_DEPLOYMENTS éléments" >> $LOG_FILE 2>&1
         else
-            echo "$current" | sed 's/\]$/'", $json]"/ > "$DEPLOYMENTS_FILE"
+            # Utiliser jq pour ajouter et tronquer aux N derniers éléments
+            # Valider ou réinitialiser le contenu existant
+            if [ ! -s "$DEPLOYMENTS_FILE" ] || ! jq -e . "$DEPLOYMENTS_FILE" >/dev/null 2>&1; then
+                echo "[]" > "$DEPLOYMENTS_FILE"
+            fi
+
+            local tmp_entry="$APP_DIR/public/.deploy-entry.json"
+            echo "$json" > "$tmp_entry"
+            jq --slurpfile entry "$tmp_entry" --argjson max "$MAX_DEPLOYMENTS" \
+               '(. + $entry) | (if length > $max then .[-$max:] else . end)' \
+               "$DEPLOYMENTS_FILE" > "$DEPLOYMENTS_FILE.tmp" && mv "$DEPLOYMENTS_FILE.tmp" "$DEPLOYMENTS_FILE"
+            rm -f "$tmp_entry" 2>/dev/null || true
         fi
     fi
 

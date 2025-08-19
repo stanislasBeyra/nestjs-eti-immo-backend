@@ -22,13 +22,13 @@
     </script>
 </head>
 <body class="bg-pipeline-bg min-h-screen font-sans">
-    <div class="container mx-auto p-6">
+    <div class="container mx-auto p-6 max-w-7xl">
         <!-- Header -->
         <div class="bg-white rounded-lg shadow-sm mb-6 p-4">
             <h1 class="text-2xl font-bold text-gray-800 mb-2">deployment view</h1>
             <div class="text-sm text-text-muted">
                 Temps moyen des stages: 
-                <span class="text-gray-700">(Durée complète moyenne: ~3min 25s)</span>
+                <span class="text-gray-700" id="avg-time-display">(Durée complète moyenne: ~3min 25s)</span>
             </div>
         </div>
 
@@ -39,69 +39,43 @@
                 <div class="p-4 text-center font-semibold text-gray-700">date deploiement</div>
                 <div class="p-4 text-center font-semibold text-gray-700 border-l">
                     <div>git Syncro:</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-git">--</div>
                 </div>
                 <div class="p-4 text-center font-semibold text-gray-700 border-l">
                     <div>Dependencies</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-deps">--</div>
                 </div>
                 <div class="p-4 text-center font-semibold text-gray-700 border-l">
                     <div>Build</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-build">--</div>
                 </div>
                 <div class="p-4 text-center font-semibold text-gray-700 border-l">
                     <div>Nettoyage</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-clean">--</div>
                 </div>
                 <div class="p-4 text-center font-semibold text-gray-700 border-l">
                     <div>Redémarrage</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-restart">--</div>
                 </div>
-
                 <div class="p-4 text-center font-semibold text-gray-700 border-l">
                     <div>temps total</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-total">--</div>
                 </div>
-                
             </div>
 
             <!-- Pipeline Rows -->
             <div class="divide-y" id="pipeline-rows">
-                <!-- Les lignes de déploiement seront générées dynamiquement ici -->
+                <!-- Les lignes seront générées dynamiquement -->
             </div>
         </div>
 
         <!-- Footer Stats -->
         <div class="mt-6 grid grid-cols-3 gap-4">
             <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-green-600" id="success-rate">--</div>
+                <div class="text-2xl font-bold text-green-600" id="success-rate">100%</div>
                 <div class="text-sm text-text-muted">Taux de succès</div>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600" id="avg-duration">--</div>
+                <div class="text-2xl font-bold text-blue-600" id="avg-duration">~3m 25s</div>
                 <div class="text-sm text-text-muted">Durée moyenne</div>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600" id="total-pipelines">--</div>
+                <div class="text-2xl font-bold text-purple-600" id="total-pipelines">5</div>
                 <div class="text-sm text-text-muted">Pipelines récents</div>
-            </div>
-        </div>
-
-        <!-- Contrôles -->
-        <div class="mt-6 bg-white rounded-lg shadow-sm p-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <button id="refresh-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        🔄 Actualiser
-                    </button>
-                    <button id="clear-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        🗑️ Effacer
-                    </button>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="auto-refresh" checked class="w-4 h-4">
-                    <label for="auto-refresh" class="text-sm text-gray-600">Actualisation automatique</label>
-                </div>
             </div>
         </div>
     </div>
@@ -109,302 +83,139 @@
     <script>
         class PipelineDashboard {
             constructor() {
-                this.autoRefreshInterval = null;
                 this.init();
             }
 
             init() {
                 console.log('🚀 Initialisation du dashboard...');
-                this.setupEventListeners();
-                this.showLoading();
                 this.loadData();
-                this.startAutoRefresh();
-            }
-
-            setupEventListeners() {
-                document.getElementById('refresh-btn').addEventListener('click', () => {
-                    this.loadData();
-                });
-
-                document.getElementById('clear-btn').addEventListener('click', () => {
-                    this.clearData();
-                });
-
-                document.getElementById('auto-refresh').addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        this.startAutoRefresh();
-                    } else {
-                        this.stopAutoRefresh();
-                    }
-                });
             }
 
             async loadData() {
                 console.log('🔄 Chargement des données...');
                 
                 try {
-                    // Charger l'historique des déploiements
-                    console.log('📚 Chargement de l\'historique...');
-                    const historyResponse = await fetch('/api/deploy/history');
-                    console.log('📚 Réponse historique:', historyResponse.status, historyResponse.ok);
+                    const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/history');
                     
-                    if (historyResponse.ok) {
-                        const history = await historyResponse.json();
-                        console.log('📚 Données historiques:', history);
-                        this.updatePipelineRows(history);
+                    if (response.ok) {
+                        const deployments = await response.json();
+                        console.log('📚 Données reçues:', deployments);
+                        this.updateDisplay(deployments);
                     } else {
-                        console.error('❌ Erreur historique:', historyResponse.status, historyResponse.statusText);
-                    }
-
-                    // Charger les durées actuelles pour le header
-                    console.log('⏱️ Chargement des durées...');
-                    const durationsResponse = await fetch('/api/deploy/durations');
-                    console.log('⏱️ Réponse durées:', durationsResponse.status, durationsResponse.ok);
-                    
-                    if (durationsResponse.ok) {
-                        const durations = await durationsResponse.json();
-                        console.log('⏱️ Données durées:', durations);
-                        this.updateHeaderDurations(durations);
-                    } else {
-                        console.error('❌ Erreur durées:', durationsResponse.status, durationsResponse.statusText);
+                        console.error('❌ Erreur:', response.status);
+                        this.showError(`Erreur ${response.status}`);
                     }
 
                 } catch (error) {
-                    console.error('❌ Erreur lors du chargement des données:', error);
-                    this.showError('Erreur de chargement: ' + error.message);
+                    console.error('❌ Erreur de connexion:', error);
+                    this.showError('Erreur de connexion');
                 }
             }
 
-            updatePipelineRows(history) {
-                const container = document.getElementById('pipeline-rows');
-                console.log('🔄 Mise à jour des lignes de pipeline avec:', history);
-                
-                if (!history.deployments || history.deployments.length === 0) {
-                    console.log('⚠️ Aucun déploiement trouvé');
-                    container.innerHTML = `
-                        <div class="p-8 text-center">
-                            <div class="text-gray-500 text-lg mb-2">📭 Aucun déploiement</div>
-                            <div class="text-gray-400">Lancez votre premier déploiement pour voir les données</div>
-                            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                                🔄 Actualiser
-                            </button>
-                        </div>
+            updateDisplay(deployments) {
+                if (!deployments || deployments.length === 0) {
+                    document.getElementById('pipeline-rows').innerHTML = `
+                        <div class="p-8 text-center text-gray-500">Aucun déploiement trouvé</div>
                     `;
                     return;
                 }
 
-                console.log(`✅ ${history.deployments.length} déploiements trouvés, génération des lignes...`);
-
-                // Grouper les déploiements par commit et trier par date (plus récent en premier)
-                const deploymentsByCommit = {};
-                history.deployments.forEach(deployment => {
-                    const commit = deployment.commit || 'N/A';
-                    if (!deploymentsByCommit[commit]) {
-                        deploymentsByCommit[commit] = [];
-                    }
-                    deploymentsByCommit[commit].push(deployment);
+                // Trier par date (plus récent en premier)
+                const sortedDeployments = [...deployments].sort((a, b) => {
+                    return new Date(b.created_at) - new Date(a.created_at);
                 });
 
-                // Trier les commits par date (plus récent en premier)
-                const sortedCommits = Object.entries(deploymentsByCommit).sort(([, deploymentsA], [, deploymentsB]) => {
-                    const dateA = new Date(deploymentsA[0].timestamp);
-                    const dateB = new Date(deploymentsB[0].timestamp);
-                    return dateB - dateA; // Ordre décroissant (plus récent en premier)
-                });
-
-                console.log('📊 Déploiements groupés par commit (triés):', sortedCommits);
-
-                const rowsHTML = sortedCommits.map(([commit, deployments]) => {
-                    // Prendre le premier déploiement pour les informations de base
-                    const firstDeployment = deployments[0];
-                    const date = new Date(firstDeployment.timestamp);
+                // Générer les lignes
+                const rowsHTML = sortedDeployments.map((deployment) => {
+                    const date = new Date(deployment.created_at);
                     const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
                     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                    
-                    console.log(`📅 Commit ${commit}: date=${date}, dateStr=${dateStr}, timeStr=${timeStr}`);
-                    
-                    // Trouver le statut final (success ou error)
-                    const finalStatus = deployments.find(d => d.status === 'success' || d.status === 'error')?.status || 'unknown';
-                    
-                    // Créer les cellules pour chaque étap
-                    const createStageCell = (stageStatus, stageMessage, duration = '--') => {
-                        const isCompleted = deployments.some(d => d.status === stageStatus);
-                        const isSuccess = isCompleted && stageStatus !== 'error';
-                        const bgColor = isCompleted ? (isSuccess ? 'bg-stage-success border-green-200' : 'bg-stage-error border-red-200') : 'bg-gray-100 border-gray-200';
-                        const textColor = isCompleted ? (isSuccess ? 'text-green-800' : 'text-red-800') : 'text-gray-500';
-                        
+                    const commit = deployment.commit_hash ? deployment.commit_hash.slice(0, 20) : 'N/A';
+                    const branch = deployment.branch ? deployment.branch : 'N/A';
+
+                    // Créer une cellule d'étape simple
+                    const createStageCell = (duration, isLongest = false) => {
+                        const progressBar = isLongest ? '<div class="absolute top-0 left-0 bg-blue-500 h-1 w-3/4 rounded-t-lg"></div>' : '';
                         return `
-                            <div class="p-2 border-l flex items-center justify-center">
-                                <div class="${bgColor} rounded-lg p-3 w-full text-center border ${isCompleted ? '' : 'border-dashed'}">
-                                    <div class="font-medium ${textColor} text-sm">${duration}</div>
-                                    <div class="text-xs text-gray-600">${stageMessage}</div>
-                                    ${isCompleted ? `<div class="text-xs ${isSuccess ? 'text-green-600' : 'text-red-600'}">✓</div>` : ''}
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
+                                    <div class="font-medium text-green-800">${this.formatDuration(duration)}</div>
+                                    ${progressBar}
                                 </div>
                             </div>
                         `;
                     };
 
+                    // Déterminer les étapes les plus longues pour la barre de progression
+                    const times = [deployment.pulling_time, deployment.installing_time, deployment.building_time, deployment.cleaning_time, deployment.restarting_time];
+                    const maxTime = Math.max(...times);
+
                     return `
                         <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
-                            <div class="p-2 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="text-xs text-gray-600 font-medium">${dateStr}</div>
-                                    <div class="text-xs text-gray-500">${timeStr}</div>
-                                    <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-1">${commit}</div>
-                                    <div class="text-xs text-gray-500">${deployments.length} étapes</div>
-                                    <div class="text-xs ${this.getStatusColor(finalStatus)} font-medium">${this.getStatusText(finalStatus)}</div>
+                            <div class="p-4 flex items-center justify-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="text-center">
+                                        <div class="text-xs text-text-muted">${dateStr}</div>
+                                        <div class="text-xs text-text-muted">${timeStr}</div>
+                                    </div>
+                                    <div class="bg-gray-500 text-white px-3 py-2 rounded text-sm font-medium">
+                                        <div class="text-xs">${branch}</div>
+                                        <div class="text-xs">${commit}</div>
+                                    </div>
                                 </div>
                             </div>
-                            ${createStageCell('pulling', 'Git Sync')}
-                            ${createStageCell('installing', 'Deps')}
-                            ${createStageCell('building', 'Build')}
-                            ${createStageCell('cleaning', 'Clean')}
-                            ${createStageCell('restarting', 'Restart')}
-                            <div class="p-2 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-3 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800 text-sm">--</div>
-                                    <div class="text-xs text-gray-600">Total</div>
-                                </div>
-                            </div>
+                            ${createStageCell(deployment.pulling_time)}
+                            ${createStageCell(deployment.installing_time)}
+                            ${createStageCell(deployment.building_time, deployment.building_time === maxTime)}
+                            ${createStageCell(deployment.cleaning_time)}
+                            ${createStageCell(deployment.restarting_time, deployment.restarting_time === maxTime)}
+                            ${createStageCell(deployment.total_time)}
                         </div>
                     `;
                 }).join('');
 
-                container.innerHTML = rowsHTML;
-                this.updateStats(history.deployments);
+                document.getElementById('pipeline-rows').innerHTML = rowsHTML;
+                this.updateStats(deployments);
+                this.updateHeader(deployments);
                 this.animateRows();
             }
 
-            updateHeaderDurations(durations) {
-                if (durations.durations) {
-                    document.getElementById('header-git').textContent = this.formatDuration(durations.durations.git);
-                    document.getElementById('header-deps').textContent = this.formatDuration(durations.durations.dependencies);
-                    document.getElementById('header-build').textContent = this.formatDuration(durations.durations.build);
-                    document.getElementById('header-clean').textContent = this.formatDuration(durations.durations.clean);
-                    document.getElementById('header-restart').textContent = this.formatDuration(durations.durations.restart);
-                    
-                    const total = durations.durations.git + durations.durations.dependencies + 
-                                durations.durations.build + durations.durations.clean + durations.durations.restart;
-                    document.getElementById('header-total').textContent = this.formatDuration(total);
-                }
-            }
+            updateHeader(deployments) {
+                if (deployments.length === 0) return;
 
-
-
-            getStatusColor(status) {
-                switch (status) {
-                    case 'success':
-                        return 'text-green-600';
-                    case 'error':
-                        return 'text-red-600';
-                    case 'starting':
-                    case 'pulling':
-                    case 'installing':
-                    case 'building':
-                    case 'cleaning':
-                    case 'restarting':
-                        return 'text-blue-600';
-                    default:
-                        return 'text-gray-600';
-                }
-            }
-
-            getStatusText(status) {
-                switch (status) {
-                    case 'success':
-                        return '✅ Succès';
-                    case 'error':
-                        return '❌ Erreur';
-                    case 'starting':
-                        return '🚀 Démarrage';
-                    case 'pulling':
-                        return '📥 Git Sync';
-                    case 'installing':
-                        return '📦 Dépendances';
-                    case 'building':
-                        return '🔨 Build';
-                    case 'cleaning':
-                        return '🧹 Nettoyage';
-                    case 'restarting':
-                        return '🔄 Redémarrage';
-                    default:
-                        return '❓ Inconnu';
-                }
+                // Calculer seulement la moyenne totale pour l'affichage principal
+                const avgTotal = Math.round(deployments.reduce((sum, d) => sum + d.total_time, 0) / deployments.length);
+                document.getElementById('avg-time-display').textContent = `(Durée complète moyenne: ${this.formatDuration(avgTotal)})`;
             }
 
             updateStats(deployments) {
-                const successCount = deployments.filter(d => d.status === 'success').length;
-                const successRate = deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0;
+                const successCount = deployments.filter(d => d.final_status === 'success').length;
+                const successRate = Math.round((successCount / deployments.length) * 100);
+                const avgDuration = Math.round(deployments.reduce((sum, d) => sum + d.total_time, 0) / deployments.length);
                 
                 document.getElementById('success-rate').textContent = `${successRate}%`;
+                document.getElementById('avg-duration').textContent = `~${this.formatDuration(avgDuration)}`;
                 document.getElementById('total-pipelines').textContent = deployments.length;
-                
-                // Calculer la durée moyenne basée sur les vrais déploiements
-                if (deployments.length > 0) {
-                    // Pour l'instant, afficher le nombre de déploiements
-                    document.getElementById('avg-duration').textContent = `${deployments.length} déploiements`;
-                } else {
-                    document.getElementById('avg-duration').textContent = '--';
-                }
             }
 
             formatDuration(seconds) {
-                if (seconds === 0) return '--';
+                if (!seconds || seconds === 0) return '0s';
                 if (seconds < 60) return `${seconds}s`;
-                if (seconds < 3600) {
-                    const minutes = Math.floor(seconds / 60);
-                    const remainingSeconds = seconds % 60;
-                    return `${minutes}min ${remainingSeconds}s`;
+                
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (remainingSeconds === 0) {
+                    return `${minutes}min`;
                 }
-                const hours = Math.floor(seconds / 3600);
-                const minutes = Math.floor((seconds % 3600) / 60);
-                return `${hours}h ${minutes}min`;
-            }
-
-            parseDuration(durationStr) {
-                if (durationStr === '--') return 0;
-                if (durationStr.includes('h')) {
-                    const [hours, minutes] = durationStr.split('h ');
-                    return parseInt(hours) * 3600 + parseInt(minutes.replace('min', '')) * 60;
-                }
-                if (durationStr.includes('min')) {
-                    const [minutes, seconds] = durationStr.split('min ');
-                    return parseInt(minutes) * 60 + parseInt(seconds.replace('s', ''));
-                }
-                return parseInt(durationStr.replace('s', ''));
-            }
-
-            clearData() {
-                document.getElementById('pipeline-rows').innerHTML = '<div class="p-8 text-center text-gray-500">Données effacées</div>';
-                document.getElementById('success-rate').textContent = '--';
-                document.getElementById('avg-duration').textContent = '--';
-                document.getElementById('total-pipelines').textContent = '--';
+                return `${minutes}min ${remainingSeconds}s`;
             }
 
             showError(message) {
-                const container = document.getElementById('pipeline-rows');
-                container.innerHTML = `
-                    <div class="p-8 text-center">
-                        <div class="text-red-500 text-lg mb-2">❌ Erreur</div>
-                        <div class="text-gray-600">${message}</div>
-                        <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                            🔄 Recharger la page
-                        </button>
-                    </div>
+                document.getElementById('pipeline-rows').innerHTML = `
+                    <div class="p-8 text-center text-red-500">${message}</div>
                 `;
             }
-
-            showLoading() {
-                const container = document.getElementById('pipeline-rows');
-                container.innerHTML = `
-                    <div class="p-8 text-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                        <div class="text-gray-600">Chargement des données...</div>
-                    </div>
-                `;
-            }
-
-
 
             animateRows() {
                 const rows = document.querySelectorAll('.grid.grid-cols-7:not(.bg-gray-50)');
@@ -418,28 +229,14 @@
                     }, index * 100);
                 });
             }
-
-            startAutoRefresh() {
-                this.stopAutoRefresh();
-                this.autoRefreshInterval = setInterval(() => {
-                    this.loadData();
-                }, 10000); // Actualisation toutes les 10 secondes
-            }
-
-            stopAutoRefresh() {
-                if (this.autoRefreshInterval) {
-                    clearInterval(this.autoRefreshInterval);
-                    this.autoRefreshInterval = null;
-                }
-            }
         }
 
-        // Initialiser le dashboard quand la page est chargée
+        // Initialiser le dashboard
         document.addEventListener('DOMContentLoaded', () => {
             new PipelineDashboard();
         });
 
-        // Effet hover sur les stages
+        // Effets hover simples
         document.addEventListener('DOMContentLoaded', function() {
             document.addEventListener('mouseover', function(e) {
                 if (e.target.closest('.bg-stage-success')) {
@@ -455,7 +252,6 @@
                     stage.style.transform = 'scale(1)';
                 }
             });
-            
         });
     </script>
 </body>
