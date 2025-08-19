@@ -119,6 +119,25 @@ if [ $? -eq 0 ]; then
         # Rebuild du projet NestJS
         if command -v npm >/dev/null 2>&1; then
             echo "🔨 Compilation avec npm run build..." >> $LOG_FILE 2>&1
+            
+            # Vérifier que rimraf est disponible
+            if [ -f "$APP_DIR/node_modules/.bin/rimraf" ]; then
+                echo "✅ Rimraf trouvé dans node_modules/.bin/" >> $LOG_FILE 2>&1
+                # Ajouter node_modules/.bin au PATH pour ce build
+                export PATH="$APP_DIR/node_modules/.bin:$PATH"
+                echo "🔧 PATH mis à jour pour inclure node_modules/.bin" >> $LOG_FILE 2>&1
+            elif [ -f "$APP_DIR/node_modules/rimraf/bin/rimraf.js" ]; then
+                echo "✅ Rimraf trouvé dans node_modules/rimraf/bin/" >> $LOG_FILE 2>&1
+                # Créer le lien symbolique manuellement
+                ln -sf ../rimraf/bin/rimraf.js "$APP_DIR/node_modules/.bin/rimraf" 2>/dev/null || true
+                export PATH="$APP_DIR/node_modules/.bin:$PATH"
+                echo "🔧 Lien symbolique rimraf créé et PATH mis à jour" >> $LOG_FILE 2>&1
+            else
+                echo "⚠️ Rimraf non trouvé, tentative d'installation..." >> $LOG_FILE 2>&1
+                npm install rimraf --save-dev >> $LOG_FILE 2>&1
+                export PATH="$APP_DIR/node_modules/.bin:$PATH"
+            fi
+            
             npm run build >> $LOG_FILE 2>&1
             
             if [ $? -eq 0 ]; then
