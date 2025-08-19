@@ -162,3 +162,4 @@ jspm_packages/
 # Uploads - ignorer les fichiers mais garder le dossier
 public/uploads/*
 !public/uploads/.gitkeep
+deploy.sh
