@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pipeline CI/CD Dashboard</title>
+    <title>Pipeline CI/CD Dashboard - Live</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -13,8 +13,15 @@
                         'pipeline-bg': '#f8f9fa',
                         'stage-success': '#d4edda',
                         'stage-pending': '#e2e6ea',
+                        'stage-running': '#fff3cd',
+                        'stage-error': '#f8d7da',
                         'commit-blue': '#007bff',
                         'text-muted': '#6c757d'
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'spin-slow': 'spin 3s linear infinite'
                     }
                 }
             }
@@ -22,408 +29,670 @@
     </script>
 </head>
 <body class="bg-pipeline-bg min-h-screen font-sans">
-    <div class="container mx-auto p-6">
-        <!-- Header -->
+    <div class="container mx-auto p-6 max-w-7xl">
+        <!-- Header avec statut en temps réel -->
         <div class="bg-white rounded-lg shadow-sm mb-6 p-4">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">deployment view</h1>
-            <div class="text-sm text-text-muted">
-                Temps moyen des stages: 
-                <span class="text-gray-700">(Durée complète moyenne: ~3min 25s)</span>
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Pipeline CI/CD </h1>
+                    <div class="text-sm text-text-muted">
+                        <span id="live-status-indicator" class="inline-flex items-center gap-2">
+                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse-slow"></div>
+                            <span>En attente...</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="dashboard.toggleAutoRefresh()" id="auto-refresh-btn" 
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                        🔄 Auto-refresh: ON
+                    </button>
+                    <button onclick="dashboard.showLogs()" 
+                            class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">
+                        📋 Logs
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Pipeline Stages Header -->
+        <!-- Déploiement en cours -->
+        <div id="current-deployment" class="bg-white rounded-lg shadow-sm mb-6 p-6" style="display: none;">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">🚀 Déploiement en cours</h2>
+            
+            <!-- Barre de progression générale -->
+            <div class="mb-6">
+                <div class="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>Progression globale</span>
+                    <span id="global-progress-text">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="global-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Étapes détaillées -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4" id="deployment-stages">
+                <!-- Les étapes seront générées dynamiquement -->
+            </div>
+
+            <!-- Informations du déploiement -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-600">Branche:</span>
+                        <span id="deploy-branch" class="font-medium ml-2">-</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Commit:</span>
+                        <span id="deploy-commit" class="font-medium ml-2">-</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Durée:</span>
+                        <span id="deploy-duration" class="font-medium ml-2">-</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Statut:</span>
+                        <span id="deploy-status" class="font-medium ml-2">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historique des déploiements -->
         <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-            <!-- Stages Header -->
+            <!-- En-tête -->
             <div class="grid grid-cols-7 bg-gray-50 border-b">
-                <div class="p-4 text-center font-semibold text-gray-700">date deploiement</div>
-                <div class="p-4 text-center font-semibold text-gray-700 border-l">
-                    <div>git Syncro:</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-git">--</div>
-                </div>
-                <div class="p-4 text-center font-semibold text-gray-700 border-l">
-                    <div>Dependencies</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-deps">--</div>
-                </div>
-                <div class="p-4 text-center font-semibold text-gray-700 border-l">
-                    <div>Build</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-build">--</div>
-                </div>
-                <div class="p-4 text-center font-semibold text-gray-700 border-l">
-                    <div>Nettoyage</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-clean">--</div>
-                </div>
-                <div class="p-4 text-center font-semibold text-gray-700 border-l">
-                    <div>Redémarrage</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-restart">--</div>
-                </div>
-
-                <div class="p-4 text-center font-semibold text-gray-700 border-l">
-                    <div>temps total</div>
-                    <div class="text-xs text-text-muted mt-1" id="header-total">--</div>
-                </div>
-                
+                <div class="p-4 text-center font-semibold text-gray-700">Date déploiement</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">Git Syncro</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">Dependencies</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">Build</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">Nettoyage</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">Redémarrage</div>
+                <div class="p-4 text-center font-semibold text-gray-700 border-l">Temps total</div>
             </div>
 
-            <!-- Pipeline Rows -->
+            <!-- Lignes du pipeline -->
             <div class="divide-y" id="pipeline-rows">
-                <!-- Les lignes de déploiement seront générées dynamiquement ici -->
+                <div class="p-8 text-center text-gray-500">Chargement...</div>
             </div>
         </div>
 
-        <!-- Footer Stats -->
+        <!-- Statistiques -->
         <div class="mt-6 grid grid-cols-3 gap-4">
             <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-green-600" id="success-rate">--</div>
+                <div class="text-2xl font-bold text-green-600" id="success-rate">-%</div>
                 <div class="text-sm text-text-muted">Taux de succès</div>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600" id="avg-duration">--</div>
+                <div class="text-2xl font-bold text-blue-600" id="avg-duration">-</div>
                 <div class="text-sm text-text-muted">Durée moyenne</div>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600" id="total-pipelines">--</div>
+                <div class="text-2xl font-bold text-purple-600" id="total-pipelines">-</div>
                 <div class="text-sm text-text-muted">Pipelines récents</div>
             </div>
         </div>
+    </div>
 
-        <!-- Contrôles -->
-        <div class="mt-6 bg-white rounded-lg shadow-sm p-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <button id="refresh-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        🔄 Actualiser
-                    </button>
-                    <button id="clear-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        🗑️ Effacer
+    <!-- Modal des logs -->
+    <div id="logs-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center p-4 border-b">
+                    <h3 class="text-lg font-bold">Logs de déploiement</h3>
+                    <button onclick="dashboard.closeLogs()" class="text-gray-500 hover:text-gray-700">
+                        ✕
                     </button>
                 </div>
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="auto-refresh" checked class="w-4 h-4">
-                    <label for="auto-refresh" class="text-sm text-gray-600">Actualisation automatique</label>
+                <div class="flex-1 overflow-auto p-4">
+                    <pre id="logs-content" class="text-sm bg-gray-900 text-green-400 p-4 rounded font-mono whitespace-pre-wrap">Chargement des logs...</pre>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        class PipelineDashboard {
+        class LivePipelineDashboard {
             constructor() {
-                this.autoRefreshInterval = null;
+                this.autoRefresh = true;
+                this.refreshInterval = null;
+                this.currentStatus = null;
+                this.stages = ['starting', 'pulling', 'installing', 'building', 'cleaning', 'restarting'];
+                this.stageNames = {
+                    'starting': 'Démarrage',
+                    'pulling': 'Git Sync',
+                    'installing': 'Dépendances',
+                    'building': 'Build',
+                    'cleaning': 'Nettoyage',
+                    'restarting': 'Redémarrage'
+                };
                 this.init();
             }
 
             init() {
-                console.log('🚀 Initialisation du dashboard...');
-                this.setupEventListeners();
-                this.showLoading();
-                this.loadData();
+                console.log('🚀 Initialisation du dashboard live...');
+                this.loadInitialData();
                 this.startAutoRefresh();
             }
 
-            setupEventListeners() {
-                document.getElementById('refresh-btn').addEventListener('click', () => {
-                    this.loadData();
-                });
-
-                document.getElementById('clear-btn').addEventListener('click', () => {
-                    this.clearData();
-                });
-
-                document.getElementById('auto-refresh').addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        this.startAutoRefresh();
-                    } else {
-                        this.stopAutoRefresh();
-                    }
-                });
+            async loadInitialData() {
+                // Charger l'historique
+                await this.loadHistory();
+                // Vérifier le statut actuel
+                await this.checkCurrentStatus();
             }
 
-            async loadData() {
-                console.log('🔄 Chargement des données...');
-                
+            async loadHistory() {
                 try {
-                    // Charger l'historique des déploiements
-                    console.log('📚 Chargement de l\'historique...');
-                    const historyResponse = await fetch('/api/deploy/history');
-                    console.log('📚 Réponse historique:', historyResponse.status, historyResponse.ok);
-                    
-                    if (historyResponse.ok) {
-                        const history = await historyResponse.json();
-                        console.log('📚 Données historiques:', history);
-                        this.updatePipelineRows(history);
+                    const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/history');
+                    if (response.ok) {
+                        const responseText = await response.text();
+                        console.log('📄 Réponse brute de l\'API:', responseText.substring(0, 200) + '...');
+                        
+                        // Essayer de parser le JSON
+                        let deployments;
+                        try {
+                            deployments = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error('❌ Erreur de parsing JSON:', parseError);
+                            console.error('📄 Contenu problématique:', responseText);
+                            
+                            // Essayer de nettoyer le JSON - méthode manuelle pour ce cas spécifique
+                            const cleanedJson = this.fixMalformedJson(responseText);
+                            console.log('🔧 JSON après nettoyage:', cleanedJson.substring(0, 200) + '...');
+                            
+                            try {
+                                deployments = JSON.parse(cleanedJson);
+                                console.log('✅ JSON nettoyé avec succès');
+                            } catch (secondError) {
+                                console.error('❌ Impossible de nettoyer le JSON:', secondError);
+                                
+                                // Dernière tentative: parsing manuel des objets
+                                try {
+                                    deployments = this.parseJsonManually(responseText);
+                                    console.log('✅ Parsing manuel réussi');
+                                } catch (manualError) {
+                                    console.error('❌ Parsing manuel échoué:', manualError);
+                                    this.showHistoryError('Format JSON invalide');
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        if (deployments) {
+                            this.updateHistoryDisplay(deployments);
+                            this.updateStats(deployments);
+                        }
                     } else {
-                        console.error('❌ Erreur historique:', historyResponse.status, historyResponse.statusText);
+                        console.error('❌ Erreur API:', response.status, response.statusText);
+                        this.showHistoryError(`Erreur ${response.status}: ${response.statusText}`);
                     }
-
-                    // Charger les durées actuelles
-                    console.log('⏱️ Chargement des durées...');
-                    const durationsResponse = await fetch('/api/deploy/durations');
-                    console.log('⏱️ Réponse durées:', durationsResponse.status, durationsResponse.ok);
-                    
-                    if (durationsResponse.ok) {
-                        const durations = await durationsResponse.json();
-                        console.log('⏱️ Données durées:', durations);
-                        this.updateHeaderDurations(durations);
-                    } else {
-                        console.error('❌ Erreur durées:', durationsResponse.status, durationsResponse.statusText);
-                    }
-
-                    // Charger le statut actuel
-                    console.log('📊 Chargement du statut...');
-                    const statusResponse = await fetch('/api/deploy/status');
-                    console.log('📊 Réponse statut:', statusResponse.status, statusResponse.ok);
-                    
-                    if (statusResponse.ok) {
-                        const status = await statusResponse.json();
-                        console.log('📊 Données statut:', status);
-                        this.updateCurrentStatus(status);
-                    } else {
-                        console.error('❌ Erreur statut:', statusResponse.status, statusResponse.statusText);
-                    }
-
                 } catch (error) {
-                    console.error('❌ Erreur lors du chargement des données:', error);
-                    this.showError('Erreur de chargement: ' + error.message);
+                    console.error('❌ Erreur lors du chargement de l\'historique:', error);
+                    this.showHistoryError('Erreur de connexion');
                 }
             }
 
-            updatePipelineRows(history) {
-                const container = document.getElementById('pipeline-rows');
-                console.log('🔄 Mise à jour des lignes de pipeline avec:', history);
-                
-                if (!history.deployments || history.deployments.length === 0) {
-                    console.log('⚠️ Aucun déploiement trouvé');
-                    container.innerHTML = `
-                        <div class="p-8 text-center">
-                            <div class="text-gray-500 text-lg mb-2">📭 Aucun déploiement</div>
-                            <div class="text-gray-400">Lancez votre premier déploiement pour voir les données</div>
-                            <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                                🔄 Actualiser
-                            </button>
-                        </div>
-                    `;
-                    return;
-                }
+            fixMalformedJson(jsonString) {
+                // Correction spécifique pour le problème identifié
+                return jsonString
+                    // Remplacer tous les \n littéraux dans le JSON par des espaces
+                    .replace(/\\n/g, ' ')
+                    // Nettoyer les sauts de ligne réels
+                    .replace(/\r\n/g, ' ')
+                    .replace(/\n/g, ' ')
+                    .replace(/\r/g, ' ')
+                    // Nettoyer les espaces multiples
+                    .replace(/\s+/g, ' ')
+                    // Nettoyer les espaces autour des structures JSON
+                    .replace(/\s*{\s*/g, '{')
+                    .replace(/\s*}\s*/g, '}')
+                    .replace(/\s*\[\s*/g, '[')
+                    .replace(/\s*\]\s*/g, ']')
+                    .replace(/\s*:\s*/g, ':')
+                    .replace(/\s*,\s*/g, ',')
+                    .trim();
+            }
 
-                console.log(`✅ ${history.deployments.length} déploiements trouvés, génération des lignes...`);
+            parseJsonManually(jsonString) {
+                // Parsing manuel en cas d'échec total
+                try {
+                    // Extraire les objets un par un avec une regex
+                    const objectMatches = jsonString.match(/\{[^{}]*\}/g);
+                    if (!objectMatches) return [];
 
-                const rowsHTML = history.deployments.map(deployment => {
-                    const date = new Date(deployment.timestamp);
-                    const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
-                    const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    const deployments = [];
+                    for (const objStr of objectMatches) {
+                        try {
+                            const cleanObj = this.fixMalformedJson(objStr);
+                            const obj = JSON.parse(cleanObj);
+                            deployments.push(obj);
+                        } catch (e) {
+                            console.warn('⚠️ Objet ignoré:', objStr);
+                        }
+                    }
                     
-                    // Utiliser les vraies données du déploiement
-                    // Pour l'instant, on affiche le statut et le message
-                    // Les durées seront ajoutées quand l'API les fournira
-                    const status = deployment.status;
-                    const message = deployment.message;
-                    
-                    // Formatage basique des durées (à améliorer avec les vraies données)
-                    const gitDuration = '--';
-                    const depsDuration = '--';
-                    const buildDuration = '--';
-                    const cleanDuration = '--';
-                    const restartDuration = '--';
-                    const totalDuration = '--';
-
-                    return `
-                        <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
-                            <div class="p-4 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="text-xs text-text-muted">${dateStr}</div>
-                                    <div class="text-xs text-text-muted">${timeStr}</div>
-                                    <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${deployment.commit || 'N/A'}</div>
-                                    <div class="text-xs text-gray-500 mt-1">${message}</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${gitDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Git Sync</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${depsDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Deps</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
-                                    <div class="font-medium text-green-800">${buildDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Build</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${cleanDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Clean</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200 relative">
-                                    <div class="font-medium text-green-800">${restartDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Restart</div>
-                                </div>
-                            </div>
-                            <div class="p-4 border-l flex items-center justify-center">
-                                <div class="bg-stage-success rounded-lg p-6 w-full text-center border border-green-200">
-                                    <div class="font-medium text-green-800">${totalDuration}</div>
-                                    <div class="text-xs text-gray-600 mt-1">Total</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = rowsHTML;
-                this.updateStats(history.deployments);
-                this.animateRows();
-            }
-
-            updateHeaderDurations(durations) {
-                if (durations.durations) {
-                    document.getElementById('header-git').textContent = this.formatDuration(durations.durations.git);
-                    document.getElementById('header-deps').textContent = this.formatDuration(durations.durations.dependencies);
-                    document.getElementById('header-build').textContent = this.formatDuration(durations.durations.build);
-                    document.getElementById('header-clean').textContent = this.formatDuration(durations.durations.clean);
-                    document.getElementById('header-restart').textContent = this.formatDuration(durations.durations.restart);
-                    
-                    const total = durations.durations.git + durations.durations.dependencies + 
-                                durations.durations.build + durations.durations.clean + durations.durations.restart;
-                    document.getElementById('header-total').textContent = this.formatDuration(total);
+                    return deployments;
+                } catch (error) {
+                    console.error('❌ Parsing manuel échoué:', error);
+                    return [];
                 }
             }
 
-            updateCurrentStatus(status) {
-                // Mettre à jour le statut actuel si nécessaire
-                console.log('Statut actuel:', status);
-            }
-
-            updateStats(deployments) {
-                const successCount = deployments.filter(d => d.status === 'success').length;
-                const successRate = deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0;
+            cleanJsonResponse(jsonString) {
+                // Nettoyer les problèmes courants de format JSON
+                let cleaned = jsonString
+                    // PROBLÈME PRINCIPAL: Supprimer les \n au milieu des chaînes JSON
+                    .replace(/,\s*\\n/g, ', ')
+                    .replace(/\\n"/g, '"')
+                    .replace(/"\s*\\n/g, '", ')
+                    // Nettoyer les sauts de ligne réels dans le JSON
+                    .replace(/,\s*\n/g, ', ')
+                    .replace(/\n"/g, '"')
+                    .replace(/"\s*\n/g, '", ')
+                    // Supprimer tous les sauts de ligne et espaces multiples
+                    .replace(/\s+/g, ' ')
+                    .replace(/,\s*,/g, ',')
+                    // Remplacer les guillemets simples par des doubles
+                    .replace(/'/g, '"')
+                    // Corriger les propriétés sans guillemets
+                    .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3')
+                    // Corriger les dates mal formatées
+                    .replace(/"timestamp":\s*"([^"]*)"([^,}]*)/g, '"timestamp": "$1"')
+                    // Supprimer les virgules en trop
+                    .replace(/,\s*}/g, '}')
+                    .replace(/,\s*]/g, ']')
+                    // Nettoyer les espaces autour des deux-points et virgules
+                    .replace(/\s*:\s*/g, ': ')
+                    .replace(/\s*,\s*/g, ', ');
                 
-                document.getElementById('success-rate').textContent = `${successRate}%`;
-                document.getElementById('total-pipelines').textContent = deployments.length;
-                
-                // Calculer la durée moyenne basée sur les vrais déploiements
-                if (deployments.length > 0) {
-                    // Pour l'instant, afficher le nombre de déploiements
-                    document.getElementById('avg-duration').textContent = `${deployments.length} déploiements`;
-                } else {
-                    document.getElementById('avg-duration').textContent = '--';
-                }
+                return cleaned.trim();
             }
 
-            formatDuration(seconds) {
-                if (seconds === 0) return '--';
-                if (seconds < 60) return `${seconds}s`;
-                if (seconds < 3600) {
-                    const minutes = Math.floor(seconds / 60);
-                    const remainingSeconds = seconds % 60;
-                    return `${minutes}min ${remainingSeconds}s`;
-                }
-                const hours = Math.floor(seconds / 3600);
-                const minutes = Math.floor((seconds % 3600) / 60);
-                return `${hours}h ${minutes}min`;
-            }
-
-            parseDuration(durationStr) {
-                if (durationStr === '--') return 0;
-                if (durationStr.includes('h')) {
-                    const [hours, minutes] = durationStr.split('h ');
-                    return parseInt(hours) * 3600 + parseInt(minutes.replace('min', '')) * 60;
-                }
-                if (durationStr.includes('min')) {
-                    const [minutes, seconds] = durationStr.split('min ');
-                    return parseInt(minutes) * 60 + parseInt(seconds.replace('s', ''));
-                }
-                return parseInt(durationStr.replace('s', ''));
-            }
-
-            clearData() {
-                document.getElementById('pipeline-rows').innerHTML = '<div class="p-8 text-center text-gray-500">Données effacées</div>';
-                document.getElementById('success-rate').textContent = '--';
-                document.getElementById('avg-duration').textContent = '--';
-                document.getElementById('total-pipelines').textContent = '--';
-            }
-
-            showError(message) {
-                const container = document.getElementById('pipeline-rows');
-                container.innerHTML = `
+            showHistoryError(message) {
+                document.getElementById('pipeline-rows').innerHTML = `
                     <div class="p-8 text-center">
-                        <div class="text-red-500 text-lg mb-2">❌ Erreur</div>
-                        <div class="text-gray-600">${message}</div>
-                        <button onclick="location.reload()" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
-                            🔄 Recharger la page
+                        <div class="text-red-500 mb-2">❌ ${message}</div>
+                        <button onclick="dashboard.loadHistory()" class="text-blue-500 hover:text-blue-700">
+                            🔄 Réessayer
                         </button>
                     </div>
                 `;
             }
 
-            showLoading() {
-                const container = document.getElementById('pipeline-rows');
-                container.innerHTML = `
-                    <div class="p-8 text-center">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                        <div class="text-gray-600">Chargement des données...</div>
-                    </div>
-                `;
+            async checkCurrentStatus() {
+                try {
+                    const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/status');
+                    if (response.ok) {
+                        const responseText = await response.text();
+                        console.log('📊 Statut brut:', responseText);
+                        
+                        let status;
+                        try {
+                            status = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error('❌ Erreur parsing statut:', parseError);
+                            // Créer un statut par défaut
+                            status = {
+                                status: 'unknown',
+                                message: 'Statut indisponible',
+                                timestamp: new Date().toISOString()
+                            };
+                        }
+                        
+                        this.updateCurrentStatus(status);
+                        
+                        // Si un déploiement est en cours, charger les détails
+                        if (status.status !== 'success' && status.status !== 'error' && status.status !== 'unknown') {
+                            await this.loadCurrentDeployment();
+                        }
+                    } else {
+                        console.error('❌ Erreur statut API:', response.status);
+                        // Statut par défaut en cas d'erreur
+                        this.updateCurrentStatus({
+                            status: 'error',
+                            message: 'Impossible de récupérer le statut',
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Erreur lors de la vérification du statutss:', error);
+                    this.updateCurrentStatus({
+                        status: 'error', 
+                        message: 'Erreur de connexion',
+                        timestamp: new Date().toISOString()
+                    });
+                }
             }
 
+            async loadCurrentDeployment() {
+                try {
+                    // Essayer de charger les détails du déploiement en cours
+                    const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/current');
+                    if (response.ok) {
+                        const deployment = await response.json();
+                        this.showCurrentDeployment(deployment);
+                    }
+                } catch (error) {
+                    console.log('ℹ️ Pas de détails de déploiement en cours disponibles');
+                }
+            }
 
+            updateCurrentStatus(status) {
+                this.currentStatus = status;
+                const indicator = document.getElementById('live-status-indicator');
+                const statusText = status.message || 'État inconnu';
+                
+                let iconColor = 'bg-gray-500';
+                let animation = '';
+                
+                switch(status.status) {
+                    case 'success':
+                        iconColor = 'bg-green-500';
+                        break;
+                    case 'error':
+                        iconColor = 'bg-red-500';
+                        animation = 'animate-bounce-slow';
+                        break;
+                    case 'starting':
+                    case 'pulling':
+                    case 'installing':
+                    case 'building':
+                    case 'cleaning':
+                    case 'restarting':
+                        iconColor = 'bg-blue-500';
+                        animation = 'animate-pulse-slow';
+                        this.showCurrentDeploymentInterface();
+                        break;
+                    default:
+                        iconColor = 'bg-yellow-500';
+                        animation = 'animate-pulse-slow';
+                }
 
-            animateRows() {
-                const rows = document.querySelectorAll('.grid.grid-cols-7:not(.bg-gray-50)');
-                rows.forEach((row, index) => {
-                    row.style.opacity = '0';
-                    row.style.transform = 'translateY(20px)';
+                indicator.innerHTML = `
+                    <div class="w-3 h-3 ${iconColor} rounded-full ${animation}"></div>
+                    <span>${statusText}</span>
+                `;
+
+                // Masquer l'interface de déploiement si terminé
+                if (status.status === 'success' || status.status === 'error') {
                     setTimeout(() => {
-                        row.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                        row.style.opacity = '1';
-                        row.style.transform = 'translateY(0)';
-                    }, index * 100);
+                        this.hideCurrentDeploymentInterface();
+                        this.loadHistory(); // Recharger l'historique
+                    }, 5000);
+                }
+            }
+
+            showCurrentDeploymentInterface() {
+                document.getElementById('current-deployment').style.display = 'block';
+                this.renderDeploymentStages();
+                this.updateDeploymentProgress();
+            }
+
+            hideCurrentDeploymentInterface() {
+                document.getElementById('current-deployment').style.display = 'none';
+            }
+
+            renderDeploymentStages() {
+                const container = document.getElementById('deployment-stages');
+                const stagesHtml = this.stages.map(stage => {
+                    return `
+                        <div class="stage-card" data-stage="${stage}">
+                            <div class="bg-gray-100 rounded-lg p-4 text-center border-2 border-gray-200">
+                                <div class="stage-icon mb-2">
+                                    <div class="w-8 h-8 bg-gray-300 rounded-full mx-auto flex items-center justify-center">
+                                        <span class="stage-number text-sm font-bold text-gray-600">${this.stages.indexOf(stage) + 1}</span>
+                                    </div>
+                                </div>
+                                <div class="stage-name text-sm font-medium text-gray-700 mb-1">
+                                    ${this.stageNames[stage]}
+                                </div>
+                                <div class="stage-duration text-xs text-gray-500">-</div>
+                                <div class="stage-status text-xs mt-1">
+                                    <span class="status-badge bg-gray-200 text-gray-600 px-2 py-1 rounded">En attente</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                container.innerHTML = stagesHtml;
+            }
+
+            updateDeploymentProgress() {
+                if (!this.currentStatus) return;
+
+                const currentStageIndex = this.stages.indexOf(this.currentStatus.status);
+                const progress = currentStageIndex >= 0 ? ((currentStageIndex + 1) / this.stages.length) * 100 : 0;
+
+                // Mettre à jour la barre de progression
+                document.getElementById('global-progress-bar').style.width = `${progress}%`;
+                document.getElementById('global-progress-text').textContent = `${Math.round(progress)}%`;
+
+                // Mettre à jour les étapes
+                this.stages.forEach((stage, index) => {
+                    const stageCard = document.querySelector(`[data-stage="${stage}"]`);
+                    const stageDiv = stageCard.querySelector('.bg-gray-100');
+                    const icon = stageCard.querySelector('.stage-icon .w-8');
+                    const statusBadge = stageCard.querySelector('.status-badge');
+
+                    if (index < currentStageIndex) {
+                        // Étape terminée
+                        stageDiv.className = 'bg-green-100 rounded-lg p-4 text-center border-2 border-green-300';
+                        icon.className = 'w-8 h-8 bg-green-500 rounded-full mx-auto flex items-center justify-center';
+                        icon.innerHTML = '<span class="text-white text-sm">✓</span>';
+                        statusBadge.className = 'status-badge bg-green-200 text-green-800 px-2 py-1 rounded';
+                        statusBadge.textContent = 'Terminé';
+                    } else if (index === currentStageIndex) {
+                        // Étape en cours
+                        stageDiv.className = 'bg-blue-100 rounded-lg p-4 text-center border-2 border-blue-300 animate-pulse-slow';
+                        icon.className = 'w-8 h-8 bg-blue-500 rounded-full mx-auto flex items-center justify-center animate-spin-slow';
+                        icon.innerHTML = '<span class="text-white text-sm">⟳</span>';
+                        statusBadge.className = 'status-badge bg-blue-200 text-blue-800 px-2 py-1 rounded';
+                        statusBadge.textContent = 'En cours';
+                    } else {
+                        // Étape en attente
+                        stageDiv.className = 'bg-gray-100 rounded-lg p-4 text-center border-2 border-gray-200';
+                        icon.className = 'w-8 h-8 bg-gray-300 rounded-full mx-auto flex items-center justify-center';
+                        icon.innerHTML = `<span class="stage-number text-sm font-bold text-gray-600">${index + 1}</span>`;
+                        statusBadge.className = 'status-badge bg-gray-200 text-gray-600 px-2 py-1 rounded';
+                        statusBadge.textContent = 'En attente';
+                    }
                 });
             }
 
-            startAutoRefresh() {
-                this.stopAutoRefresh();
-                this.autoRefreshInterval = setInterval(() => {
-                    this.loadData();
-                }, 10000); // Actualisation toutes les 10 secondes
+            updateHistoryDisplay(deployments) {
+                if (!deployments || deployments.length === 0) {
+                    document.getElementById('pipeline-rows').innerHTML = `
+                        <div class="p-8 text-center text-gray-500">Aucun déploiement trouvé</div>
+                    `;
+                    return;
+                }
+
+                // S'assurer que deployments est un tableau
+                const deploymentsArray = Array.isArray(deployments) ? deployments : 
+                                       (deployments.deployments ? deployments.deployments : [deployments]);
+
+                const sortedDeployments = [...deploymentsArray].sort((a, b) => {
+                    const dateA = new Date(a.created_at || a.timestamp || 0);
+                    const dateB = new Date(b.created_at || b.timestamp || 0);
+                    return dateB - dateA;
+                });
+
+                const rowsHTML = sortedDeployments.map((deployment) => {
+                    // Gestion flexible des champs de date
+                    let date;
+                    try {
+                        date = new Date(deployment.created_at || deployment.timestamp || Date.now());
+                        if (isNaN(date.getTime())) {
+                            date = new Date();
+                        }
+                    } catch (e) {
+                        date = new Date();
+                    }
+
+                    const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
+                    const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    // Gestion flexible des champs
+                    const commit = (deployment.commit_hash || deployment.commit || 'N/A').toString().slice(0, 8);
+                    const branch = deployment.branch || 'N/A';
+                    const finalStatus = deployment.final_status || deployment.status || 'unknown';
+
+                    const createStageCell = (duration) => {
+                        const safeTime = parseInt(duration) || 0;
+                        const bgColor = finalStatus === 'success' ? 'bg-stage-success border-green-200' : 
+                                       finalStatus === 'error' ? 'bg-stage-error border-red-200' : 
+                                       'bg-stage-pending border-gray-200';
+                        const textColor = finalStatus === 'success' ? 'text-green-800' : 
+                                         finalStatus === 'error' ? 'text-red-800' : 
+                                         'text-gray-800';
+
+                        return `
+                            <div class="p-4 border-l flex items-center justify-center">
+                                <div class="${bgColor} rounded-lg p-4 w-full text-center border">
+                                    <div class="font-medium ${textColor}">${this.formatDuration(safeTime)}</div>
+                                </div>
+                            </div>
+                        `;
+                    };
+
+                    const statusIcon = finalStatus === 'success' ? '✅' : 
+                                      finalStatus === 'error' ? '❌' : '⏳';
+
+                    return `
+                        <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
+                            <div class="p-4 flex items-center justify-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="text-center">
+                                        <div class="text-xs text-text-muted">${dateStr}</div>
+                                        <div class="text-xs text-text-muted">${timeStr}</div>
+                                    </div>
+                                    <div class="bg-gray-500 text-white px-3 py-2 rounded text-sm font-medium">
+                                        <div class="text-xs flex items-center gap-1">
+                                            <span>${statusIcon}</span>
+                                            <span>${branch}</span>
+                                        </div>
+                                        <div class="text-xs">${commit}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            ${createStageCell(deployment.pulling_time || deployment.git || 0)}
+                            ${createStageCell(deployment.installing_time || deployment.dependencies || 0)}
+                            ${createStageCell(deployment.building_time || deployment.build || 0)}
+                            ${createStageCell(deployment.cleaning_time || deployment.clean || 0)}
+                            ${createStageCell(deployment.restarting_time || deployment.restart || 0)}
+                            ${createStageCell(deployment.total_time || deployment.total || 0)}
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('pipeline-rows').innerHTML = rowsHTML;
             }
 
-            stopAutoRefresh() {
-                if (this.autoRefreshInterval) {
-                    clearInterval(this.autoRefreshInterval);
-                    this.autoRefreshInterval = null;
+            updateStats(deployments) {
+                if (!deployments || deployments.length === 0) return;
+
+                const successCount = deployments.filter(d => d.final_status === 'success').length;
+                const successRate = Math.round((successCount / deployments.length) * 100);
+                const avgDuration = Math.round(deployments.reduce((sum, d) => sum + d.total_time, 0) / deployments.length);
+                
+                document.getElementById('success-rate').textContent = `${successRate}%`;
+                document.getElementById('avg-duration').textContent = this.formatDuration(avgDuration);
+                document.getElementById('total-pipelines').textContent = deployments.length;
+            }
+
+            formatDuration(seconds) {
+                if (!seconds || seconds === 0) return '0s';
+                if (seconds < 60) return `${seconds}s`;
+                
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                
+                if (remainingSeconds === 0) {
+                    return `${minutes}m`;
+                }
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+
+            async showLogs() {
+                document.getElementById('logs-modal').classList.remove('hidden');
+                document.getElementById('logs-content').textContent = 'Chargement des logs...';
+                
+                try {
+                    const response = await fetch('https://immo.partenairesmtn.ci/api/deploy/logs');
+                    if (response.ok) {
+                        const logs = await response.text();
+                        // Nettoyer et formater les logs
+                        const cleanLogs = logs
+                            .replace(/\r\n/g, '\n')
+                            .replace(/\r/g, '\n')
+                            .trim();
+                        
+                        document.getElementById('logs-content').textContent = cleanLogs || 'Aucun log disponible';
+                        
+                        // Auto-scroll vers le bas
+                        const logsContent = document.getElementById('logs-content');
+                        logsContent.scrollTop = logsContent.scrollHeight;
+                    } else {
+                        document.getElementById('logs-content').textContent = `Erreur ${response.status}: ${response.statusText}`;
+                    }
+                } catch (error) {
+                    console.error('❌ Erreur logs:', error);
+                    document.getElementById('logs-content').textContent = `Erreur de connexion: ${error.message}`;
+                }
+            }
+
+            closeLogs() {
+                document.getElementById('logs-modal').classList.add('hidden');
+            }
+
+            startAutoRefresh() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                }
+                
+                this.refreshInterval = setInterval(() => {
+                    if (this.autoRefresh) {
+                        this.checkCurrentStatus();
+                        
+                        // Recharger l'historique moins souvent
+                        if (Math.random() < 0.2) { // 20% de chance
+                            this.loadHistory();
+                        }
+                    }
+                }, 2000); // Vérification toutes les 2 secondes
+            }
+
+            toggleAutoRefresh() {
+                this.autoRefresh = !this.autoRefresh;
+                const btn = document.getElementById('auto-refresh-btn');
+                btn.textContent = `🔄 Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'}`;
+                btn.className = this.autoRefresh ? 
+                    'px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors' :
+                    'px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors';
+                
+                if (this.autoRefresh) {
+                    this.startAutoRefresh();
                 }
             }
         }
 
-        // Initialiser le dashboard quand la page est chargée
+        // Initialiser le dashboard
+        let dashboard;
         document.addEventListener('DOMContentLoaded', () => {
-            new PipelineDashboard();
+            dashboard = new LivePipelineDashboard();
         });
 
-        // Effet hover sur les stages
-        document.addEventListener('DOMContentLoaded', function() {
-            document.addEventListener('mouseover', function(e) {
-                if (e.target.closest('.bg-stage-success')) {
-                    const stage = e.target.closest('.bg-stage-success');
-                    stage.style.transform = 'scale(1.02)';
-                    stage.style.transition = 'transform 0.2s ease';
-                }
-            });
-            
-            document.addEventListener('mouseout', function(e) {
-                if (e.target.closest('.bg-stage-success')) {
-                    const stage = e.target.closest('.bg-stage-success');
-                    stage.style.transform = 'scale(1)';
-                }
-            });
+        // Gestion des raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                dashboard.closeLogs();
+            } else if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                dashboard.checkCurrentStatus();
+                dashboard.loadHistory();
+            }
         });
     </script>
 </body>
