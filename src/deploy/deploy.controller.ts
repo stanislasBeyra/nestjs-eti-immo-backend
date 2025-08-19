@@ -93,7 +93,18 @@ export class DeployController {
   async handleWebhook(@Body() payload: any, @Headers('x-hub-signature-256') signature: string) {
     try {
       this.logger.log('Webhook GitHub reçu');
-      this.logger.log(`Payload: ${JSON.stringify(payload, null, 2)}`);
+      
+      // Vérifier que le payload existe
+      if (!payload) {
+        this.logger.error('❌ Payload vide reçu');
+        return {
+          success: false,
+          message: 'Payload vide reçu',
+          timestamp: new Date().toISOString()
+        };
+      }
+      
+      this.logger.log(`Payload reçu: ${JSON.stringify(payload, null, 2)}`);
       
       // Vérifier que c'est un push sur la branche devs
       if (payload.ref === 'refs/heads/devs') {
@@ -103,6 +114,16 @@ export class DeployController {
         const deployScript = '/home/partenai/public_html/nestjs/git_update/deploy.sh';
         
         this.logger.log(`🚀 Lancement du script de déploiement: ${deployScript}`);
+        
+        // Vérifier que le script existe
+        if (!existsSync(deployScript)) {
+          this.logger.error(`❌ Script de déploiement non trouvé: ${deployScript}`);
+          return {
+            success: false,
+            message: 'Script de déploiement non trouvé',
+            timestamp: new Date().toISOString()
+          };
+        }
         
         // Exécuter le script de déploiement en arrière-plan
         exec(`bash ${deployScript} > /dev/null 2>&1 &`, (error, stdout, stderr) => {
@@ -133,7 +154,14 @@ export class DeployController {
       }
     } catch (error) {
       this.logger.error(`❌ Erreur lors du traitement du webhook: ${error.message}`);
-      throw new InternalServerErrorException('Erreur lors du traitement du webhook');
+      this.logger.error(`Stack trace: ${error.stack}`);
+      
+      return {
+        success: false,
+        message: 'Erreur lors du traitement du webhook',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
     }
   }
 }
