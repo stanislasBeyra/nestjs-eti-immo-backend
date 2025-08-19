@@ -1,7 +1,9 @@
-import { Controller, Get, Res, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Res, Logger, Body, Headers } from '@nestjs/common';
 import { Response } from 'express';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { exec } from 'child_process';
+import { InternalServerErrorException } from '@nestjs/common';
 
 @Controller('deploy')
 export class DeployController {
@@ -85,5 +87,53 @@ export class DeployController {
   @Get('test')
   async getTest(@Res() res: Response) {
     return res.send('Test success');
+  }
+
+  @Post('webhook')
+  async handleWebhook(@Body() payload: any, @Headers('x-hub-signature-256') signature: string) {
+    try {
+      this.logger.log('Webhook GitHub reçu');
+      this.logger.log(`Payload: ${JSON.stringify(payload, null, 2)}`);
+      
+      // Vérifier que c'est un push sur la branche devs
+      if (payload.ref === 'refs/heads/devs') {
+        this.logger.log('✅ Webhook GitHub reçu pour la branche devs - Déclenchement du déploiement');
+        
+        // Lancer le déploiement automatique
+        const deployScript = '/home/partenai/public_html/nestjs/git_update/deploy.sh';
+        
+        this.logger.log(`🚀 Lancement du script de déploiement: ${deployScript}`);
+        
+        // Exécuter le script de déploiement en arrière-plan
+        exec(`bash ${deployScript} > /dev/null 2>&1 &`, (error, stdout, stderr) => {
+          if (error) {
+            this.logger.error(`❌ Erreur lors du lancement du déploiement: ${error.message}`);
+            return;
+          }
+          this.logger.log('✅ Script de déploiement lancé avec succès');
+        });
+        
+        return {
+          success: true,
+          message: 'Déploiement déclenché avec succès',
+          timestamp: new Date().toISOString(),
+          branch: payload.ref,
+          commit: payload.head_commit?.id || 'N/A'
+        };
+      } else {
+        this.logger.log(`⚠️ Webhook ignoré - Branche: ${payload.ref} (attendu: refs/heads/devs)`);
+        
+        return {
+          success: false,
+          message: 'Webhook ignoré (pas la bonne branche)',
+          ref: payload.ref,
+          expected: 'refs/heads/devs',
+          timestamp: new Date().toISOString()
+        };
+      }
+    } catch (error) {
+      this.logger.error(`❌ Erreur lors du traitement du webhook: ${error.message}`);
+      throw new InternalServerErrorException('Erreur lors du traitement du webhook');
+    }
   }
 }
