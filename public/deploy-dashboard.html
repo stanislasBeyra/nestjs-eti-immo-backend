@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Dashboard Déploiement NestJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .status-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #3498db;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .status-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.starting { background: #f39c12; color: white; }
+        .status-badge.pulling { background: #3498db; color: white; }
+        .status-badge.installing { background: #9b59b6; color: white; }
+        .status-badge.building { background: #e67e22; color: white; }
+        .status-badge.cleaning { background: #16a085; color: white; }
+        .status-badge.restarting { background: #e74c3c; color: white; }
+        .status-badge.success { background: #27ae60; color: white; }
+        .status-badge.error { background: #c0392b; color: white; }
+
+        .status-message {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .status-timestamp {
+            font-size: 0.9em;
+            color: #888;
+            font-style: italic;
+        }
+
+        .logs-section {
+            padding: 30px;
+        }
+
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logs-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .logs-container {
+            background: #1e1e1e;
+            color: #00ff99;
+            padding: 20px;
+            border-radius: 15px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 2px solid #333;
+        }
+
+        .logs-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .logs-container::-webkit-scrollbar-track {
+            background: #2a2a2a;
+            border-radius: 4px;
+        }
+
+        .logs-container::-webkit-scrollbar-thumb {
+            background: #00ff99;
+            border-radius: 4px;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .auto-refresh input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .auto-refresh label {
+            color: #555;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ecf0f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+        }
+
+        .step-circle.active {
+            background: #3498db;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .step-circle.completed {
+            background: #27ae60;
+            color: white;
+        }
+
+        .step-circle.error {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .step-label.active {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        .step-label.completed {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .step-label.error {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .footer {
+            background: #ecf0f1;
+            padding: 20px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .step-indicator {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Dashboard Déploiement NestJS v6</h1>
+            <p>Surveillance en temps réel du processus de déploiement</p>
+        </div>
+
+        <div class="status-section">
+            <div class="status-card">
+                <div class="status-header">
+                    <div class="status-title">📊 Statut du Déploiement</div>
+                    <div id="status-badge" class="status-badge starting">En cours...</div>
+                </div>
+                <div id="status-message" class="status-message">Initialisation du déploiement...</div>
+                <div id="status-timestamp" class="status-timestamp">Dernière mise à jour: --</div>
+                
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+
+                <div class="step-indicator">
+                    <div class="step">
+                        <div id="step1" class="step-circle">1</div>
+                        <div id="label1" class="step-label">Git Sync</div>
+                    </div>
+                    <div class="step">
+                        <div id="step2" class="step-circle">2</div>
+                        <div id="label2" class="step-label">Dépendances</div>
+                    </div>
+                    <div class="step">
+                        <div id="step3" class="step-circle">3</div>
+                        <div id="label3" class="step-label">Build</div>
+                    </div>
+                    <div class="step">
+                        <div id="step4" class="step-circle">4</div>
+                        <div id="label4" class="step-label">Nettoyage</div>
+                    </div>
+                    <div class="step">
+                        <div id="step5" class="step-circle">5</div>
+                        <div id="label5" class="step-label">Redémarrage</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="logs-section">
+            <div class="logs-header">
+                <div class="logs-title">📝 Logs de Déploiement</div>
+                <button id="refresh-btn" class="refresh-btn">🔄 Actualiser</button>
+            </div>
+            
+            <div id="logs-container" class="logs-container">
+                Chargement des logs...
+            </div>
+
+            <div class="auto-refresh">
+                <input type="checkbox" id="auto-refresh" checked>
+                <label for="auto-refresh">Actualisation automatique toutes les 5 secondes</label>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Dashboard de déploiement NestJS - cPanel Node.js App</p>
+            <p>Dernière actualisation: <span id="last-update">--</span></p>
+        </div>
+    </div>
+
+    <script>
+        class DeploymentDashboard {
+            constructor() {
+                this.autoRefreshInterval = null;
+                this.currentStep = 0;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.loadStatus();
+                this.loadLogs();
+                this.startAutoRefresh();
+            }
+
+            setupEventListeners() {
+                document.getElementById('refresh-btn').addEventListener('click', () => {
+                    this.loadStatus();
+                    this.loadLogs();
+                });
+
+                document.getElementById('auto-refresh').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        this.startAutoRefresh();
+                    } else {
+                        this.stopAutoRefresh();
+                    }
+                });
+            }
+
+            async loadStatus() {
+                try {
+                    const response = await fetch('/api/deploy/status');
+                    if (response.ok) {
+                        const status = await response.json();
+                        this.updateStatus(status);
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du chargement du statut:', error);
+                }
+            }
+
+            async loadLogs() {
+                try {
+                    const response = await fetch('/api/deploy/logs');
+                    if (response.ok) {
+                        const logs = await response.text();
+                        this.updateLogs(logs);
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du chargement des logs:', error);
+                }
+            }
+
+            updateStatus(status) {
+                const badge = document.getElementById('status-badge');
+                const message = document.getElementById('status-message');
+                const timestamp = document.getElementById('status-timestamp');
+                const progressFill = document.getElementById('progress-fill');
+
+                // Mettre à jour le badge de statut
+                badge.className = `status-badge ${status.status}`;
+                badge.textContent = this.getStatusText(status.status);
+
+                // Mettre à jour le message
+                message.textContent = status.message;
+
+                // Mettre à jour le timestamp
+                timestamp.textContent = `Dernière mise à jour: ${status.timestamp}`;
+
+                // Mettre à jour la barre de progression
+                const progress = this.getProgressFromStatus(status.status);
+                progressFill.style.width = `${progress}%`;
+
+                // Mettre à jour les étapes
+                this.updateSteps(status.status);
+
+                // Mettre à jour le timestamp de dernière actualisation
+                document.getElementById('last-update').textContent = new Date().toLocaleString('fr-FR');
+            }
+
+            updateLogs(logs) {
+                const container = document.getElementById('logs-container');
+                container.innerHTML = logs.replace(/\n/g, '<br>');
+                container.scrollTop = container.scrollHeight;
+            }
+
+            getStatusText(status) {
+                const statusMap = {
+                    'starting': 'Démarrage',
+                    'pulling': 'Git Sync',
+                    'installing': 'Installation',
+                    'building': 'Build',
+                    'cleaning': 'Nettoyage',
+                    'restarting': 'Redémarrage',
+                    'success': 'Succès',
+                    'error': 'Erreur'
+                };
+                return statusMap[status] || status;
+            }
+
+            getProgressFromStatus(status) {
+                const progressMap = {
+                    'starting': 10,
+                    'pulling': 20,
+                    'installing': 40,
+                    'building': 60,
+                    'cleaning': 80,
+                    'restarting': 90,
+                    'success': 100,
+                    'error': 100
+                };
+                return progressMap[status] || 0;
+            }
+
+            updateSteps(status) {
+                const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+                const labels = ['label1', 'label2', 'label3', 'label4', 'label5'];
+
+                steps.forEach((stepId, index) => {
+                    const step = document.getElementById(stepId);
+                    const label = document.getElementById(labels[index]);
+
+                    if (index < this.getCurrentStepIndex(status)) {
+                        step.className = 'step-circle completed';
+                        label.className = 'step-label completed';
+                    } else if (index === this.getCurrentStepIndex(status)) {
+                        step.className = 'step-circle active';
+                        label.className = 'step-label active';
+                    } else {
+                        step.className = 'step-circle';
+                        label.className = 'step-label';
+                    }
+                });
+            }
+
+            getCurrentStepIndex(status) {
+                const stepOrder = ['starting', 'pulling', 'installing', 'building', 'cleaning', 'restarting', 'success'];
+                return stepOrder.indexOf(status);
+            }
+
+            startAutoRefresh() {
+                this.stopAutoRefresh();
+                this.autoRefreshInterval = setInterval(() => {
+                    this.loadStatus();
+                    this.loadLogs();
+                }, 5000);
+            }
+
+            stopAutoRefresh() {
+                if (this.autoRefreshInterval) {
+                    clearInterval(this.autoRefreshInterval);
+                    this.autoRefreshInterval = null;
+                }
+            }
+        }
+
+        // Initialiser le dashboard quand la page est chargée
+        document.addEventListener('DOMContentLoaded', () => {
+            new DeploymentDashboard();
+        });
+    </script>
+</body>
+</html>
