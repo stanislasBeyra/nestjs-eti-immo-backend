@@ -385,7 +385,7 @@
 
             async loadStatus() {
                 try {
-                    const response = await fetch('/deploy/status');
+                    const response = await fetch('/api/deploy/status');
                     if (response.ok) {
                         const status = await response.json();
                         this.updateStatus(status);
@@ -397,7 +397,7 @@
 
             async loadLogs() {
                 try {
-                    const response = await fetch('/deploy/logs');
+                    const response = await fetch('/api/deploy/logs');
                     if (response.ok) {
                         const logs = await response.text();
                         this.updateLogs(logs);
