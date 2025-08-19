@@ -117,21 +117,7 @@
             </div>
         </div>
 
-        <!-- Statistiques -->
-        <!-- <div class="mt-6 grid grid-cols-3 gap-4">
-            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-green-600" id="success-rate">-%</div>
-                <div class="text-sm text-text-muted">Taux de succès</div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600" id="avg-duration">-</div>
-                <div class="text-sm text-text-muted">Durée moyenne</div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600" id="total-pipelines">-</div>
-                <div class="text-sm text-text-muted">Pipelines récents</div>
-            </div>
-        </div> -->
+       
     </div>
 
     <!-- Modal des logs -->
@@ -597,9 +583,7 @@
                 const successRate = Math.round((successCount / deployments.length) * 100);
                 const avgDuration = Math.round(deployments.reduce((sum, d) => sum + d.total_time, 0) / deployments.length);
                 
-                // document.getElementById('success-rate').textContent = `${successRate}%`;
-                // document.getElementById('avg-duration').textContent = this.formatDuration(avgDuration);
-                // document.getElementById('total-pipelines').textContent = deployments.length;
+                
             }
 
             formatDuration(seconds) {
