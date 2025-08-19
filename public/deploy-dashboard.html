@@ -285,6 +285,47 @@
 
 
 
+            getStatusColor(status) {
+                switch (status) {
+                    case 'success':
+                        return 'text-green-600';
+                    case 'error':
+                        return 'text-red-600';
+                    case 'starting':
+                    case 'pulling':
+                    case 'installing':
+                    case 'building':
+                    case 'cleaning':
+                    case 'restarting':
+                        return 'text-blue-600';
+                    default:
+                        return 'text-gray-600';
+                }
+            }
+
+            getStatusText(status) {
+                switch (status) {
+                    case 'success':
+                        return '✅ Succès';
+                    case 'error':
+                        return '❌ Erreur';
+                    case 'starting':
+                        return '🚀 Démarrage';
+                    case 'pulling':
+                        return '📥 Git Sync';
+                    case 'installing':
+                        return '📦 Dépendances';
+                    case 'building':
+                        return '🔨 Build';
+                    case 'cleaning':
+                        return '🧹 Nettoyage';
+                    case 'restarting':
+                        return '🔄 Redémarrage';
+                    default:
+                        return '❓ Inconnu';
+                }
+            }
+
             updateStats(deployments) {
                 const successCount = deployments.filter(d => d.status === 'success').length;
                 const successRate = deployments.length > 0 ? Math.round((successCount / deployments.length) * 100) : 0;
