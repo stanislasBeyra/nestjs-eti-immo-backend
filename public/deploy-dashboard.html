@@ -135,6 +135,28 @@
             box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
         }
 
+        .logs-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .clear-logs-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .clear-logs-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+
         .logs-container {
             background: #1e1e1e;
             color: #00ff99;
@@ -160,6 +182,122 @@
         .logs-container::-webkit-scrollbar-thumb {
             background: #00ff99;
             border-radius: 4px;
+        }
+
+        .log-separator {
+            background: #2a2a2a;
+            color: #00ff99;
+            padding: 8px 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            border-left: 3px solid #00ff99;
+            font-family: Arial, sans-serif;
+        }
+
+        .log-entry {
+            background: #2a2a2a;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #27ae60;
+            font-family: 'Courier New', monospace;
+        }
+
+        .history-section {
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .history-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .history-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #e9ecef;
+        }
+
+        .deployment-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .deployment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .deployment-item.success {
+            border-left-color: #27ae60;
+        }
+
+        .deployment-item.error {
+            border-left-color: #e74c3c;
+        }
+
+        .deployment-item.starting,
+        .deployment-item.pulling,
+        .deployment-item.installing,
+        .deployment-item.building,
+        .deployment-item.cleaning,
+        .deployment-item.restarting {
+            border-left-color: #f39c12;
+        }
+
+        .deployment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .deployment-status {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .deployment-status.success { background: #d4edda; color: #155724; }
+        .deployment-status.error { background: #f8d7da; color: #721c24; }
+        .deployment-status.starting { background: #fff3cd; color: #856404; }
+        .deployment-status.pulling { background: #d1ecf1; color: #0c5460; }
+        .deployment-status.installing { background: #e2e3e5; color: #383d41; }
+        .deployment-status.building { background: #f8d7da; color: #721c24; }
+        .deployment-status.cleaning { background: #d1ecf1; color: #0c5460; }
+        .deployment-status.restarting { background: #f8d7da; color: #721c24; }
+
+        .deployment-info {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .deployment-message {
+            font-weight: 500;
+            color: #495057;
+            margin: 5px 0;
         }
 
         .auto-refresh {
@@ -334,7 +472,10 @@
         <div class="logs-section">
             <div class="logs-header">
                 <div class="logs-title">📝 Logs de Déploiement</div>
-                <button id="refresh-btn" class="refresh-btn">🔄 Actualiser</button>
+                <div class="logs-actions">
+                    <button id="refresh-btn" class="refresh-btn">🔄 Actualiser</button>
+                    <button id="clear-logs-btn" class="clear-logs-btn">🗑️ Effacer</button>
+                </div>
             </div>
             
             <div id="logs-container" class="logs-container">
@@ -344,6 +485,17 @@
             <div class="auto-refresh">
                 <input type="checkbox" id="auto-refresh" checked>
                 <label for="auto-refresh">Actualisation automatique toutes les 5 secondes</label>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <div class="history-title">📚 Historique des Déploiements</div>
+                <button id="refresh-history-btn" class="refresh-btn">🔄 Actualiser</button>
+            </div>
+            
+            <div id="history-container" class="history-container">
+                Chargement de l'historique...
             </div>
         </div>
 
@@ -365,6 +517,7 @@
                 this.setupEventListeners();
                 this.loadStatus();
                 this.loadLogs();
+                this.loadHistory();
                 this.startAutoRefresh();
             }
 
@@ -372,6 +525,14 @@
                 document.getElementById('refresh-btn').addEventListener('click', () => {
                     this.loadStatus();
                     this.loadLogs();
+                });
+
+                document.getElementById('clear-logs-btn').addEventListener('click', () => {
+                    this.clearLogs();
+                });
+
+                document.getElementById('refresh-history-btn').addEventListener('click', () => {
+                    this.loadHistory();
                 });
 
                 document.getElementById('auto-refresh').addEventListener('change', (e) => {
@@ -400,7 +561,11 @@
                     const response = await fetch('/api/deploy/logs');
                     if (response.ok) {
                         const logs = await response.text();
-                        this.updateLogs(logs);
+                        
+                        // Ne mettre à jour que si les logs ont changé
+                        if (logs && logs.trim() !== '') {
+                            this.updateLogs(logs);
+                        }
                     }
                 } catch (error) {
                     console.error('Erreur lors du chargement des logs:', error);
@@ -436,8 +601,72 @@
 
             updateLogs(logs) {
                 const container = document.getElementById('logs-container');
-                container.innerHTML = logs.replace(/\n/g, '<br>');
+                
+                // Ajouter un timestamp pour cette mise à jour
+                const timestamp = new Date().toLocaleString('fr-FR');
+                const separator = `<div class="log-separator">🕐 ${timestamp}</div>`;
+                
+                // Ajouter les nouveaux logs à la fin (au lieu de remplacer)
+                const newLogs = logs.replace(/\n/g, '<br>');
+                container.innerHTML += separator + '<div class="log-entry">' + newLogs + '</div>';
+                
+                // Limiter le nombre d'entrées de logs pour éviter la surcharge
+                const logEntries = container.querySelectorAll('.log-entry');
+                if (logEntries.length > 20) {
+                    // Supprimer les anciennes entrées (garder les 20 plus récentes)
+                    const entriesToRemove = logEntries.length - 20;
+                    for (let i = 0; i < entriesToRemove; i++) {
+                        if (logEntries[i] && logEntries[i].nextElementSibling) {
+                            logEntries[i].nextElementSibling.remove(); // Supprimer le séparateur
+                            logEntries[i].remove(); // Supprimer l'entrée de log
+                        }
+                    }
+                }
+                
+                // Faire défiler vers le bas pour voir les nouveaux logs
                 container.scrollTop = container.scrollHeight;
+            }
+
+            clearLogs() {
+                const container = document.getElementById('logs-container');
+                container.innerHTML = '<div class="log-separator">🕐 Logs effacés - ' + new Date().toLocaleString('fr-FR') + '</div>';
+            }
+
+            async loadHistory() {
+                try {
+                    const response = await fetch('/api/deploy/history');
+                    if (response.ok) {
+                        const history = await response.json();
+                        this.updateHistory(history);
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du chargement de l\'historique:', error);
+                }
+            }
+
+            updateHistory(history) {
+                const container = document.getElementById('history-container');
+                
+                if (!history.deployments || history.deployments.length === 0) {
+                    container.innerHTML = '<div class="deployment-item"><p>Aucun déploiement dans l\'historique</p></div>';
+                    return;
+                }
+
+                const historyHTML = history.deployments.map(deployment => `
+                    <div class="deployment-item ${deployment.status}">
+                        <div class="deployment-header">
+                            <div class="deployment-status ${deployment.status}">${this.getStatusText(deployment.status)}</div>
+                            <div class="deployment-info">${new Date(deployment.timestamp).toLocaleString('fr-FR')}</div>
+                        </div>
+                        <div class="deployment-message">${deployment.message}</div>
+                        <div class="deployment-info">
+                            Branche: ${deployment.branch || 'N/A'} | 
+                            Commit: ${deployment.commit || 'N/A'}
+                        </div>
+                    </div>
+                `).join('');
+
+                container.innerHTML = historyHTML;
             }
 
             getStatusText(status) {

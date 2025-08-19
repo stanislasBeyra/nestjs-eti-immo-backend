@@ -84,6 +84,32 @@ export class DeployController {
       });
     }
   }
+
+  @Get('history')
+  async getHistory(@Res() res: Response) {
+    try {
+      // Chemin absolu vers le fichier deploy-history.json
+      const historyPath = join(__dirname, '..', '..', 'public', 'deploy-history.json');
+      this.logger.log(`Serving deploy-history.json from: ${historyPath}`);
+      
+      if (existsSync(historyPath)) {
+        const history = readFileSync(historyPath, 'utf8');
+        res.setHeader('Content-Type', 'application/json');
+        res.send(history);
+      } else {
+        res.json({
+          deployments: []
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Error in getHistory: ${error.message}`);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la lecture de l\'historique',
+        messageError: error.message
+      });
+    }
+  }
   @Get('testsssss')
   async getTest(@Res() res: Response) {
     return res.send('Test success' + ' ' + __dirname);
