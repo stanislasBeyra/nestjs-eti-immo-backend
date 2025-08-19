@@ -195,7 +195,7 @@
 
                 console.log(`✅ ${history.deployments.length} déploiements trouvés, génération des lignes...`);
 
-                // Grouper les déploiements par commit
+                // Grouper les déploiements par commit et trier par date (plus récent en premier)
                 const deploymentsByCommit = {};
                 history.deployments.forEach(deployment => {
                     const commit = deployment.commit || 'N/A';
@@ -205,14 +205,23 @@
                     deploymentsByCommit[commit].push(deployment);
                 });
 
-                console.log('📊 Déploiements groupés par commit:', deploymentsByCommit);
+                // Trier les commits par date (plus récent en premier)
+                const sortedCommits = Object.entries(deploymentsByCommit).sort(([, deploymentsA], [, deploymentsB]) => {
+                    const dateA = new Date(deploymentsA[0].timestamp);
+                    const dateB = new Date(deploymentsB[0].timestamp);
+                    return dateB - dateA; // Ordre décroissant (plus récent en premier)
+                });
 
-                const rowsHTML = Object.entries(deploymentsByCommit).map(([commit, deployments]) => {
+                console.log('📊 Déploiements groupés par commit (triés):', sortedCommits);
+
+                const rowsHTML = sortedCommits.map(([commit, deployments]) => {
                     // Prendre le premier déploiement pour les informations de base
                     const firstDeployment = deployments[0];
                     const date = new Date(firstDeployment.timestamp);
                     const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
                     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    console.log(`📅 Commit ${commit}: date=${date}, dateStr=${dateStr}, timeStr=${timeStr}`);
                     
                     // Trouver le statut final (success ou error)
                     const finalStatus = deployments.find(d => d.status === 'success' || d.status === 'error')?.status || 'unknown';
@@ -239,8 +248,8 @@
                         <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
                             <div class="p-4 flex items-center justify-center">
                                 <div class="text-center">
-                                    <div class="text-xs text-text-muted">${dateStr}</div>
-                                    <div class="text-xs text-text-muted">${timeStr}</div>
+                                    <div class="text-xs text-gray-600 font-medium">${dateStr}</div>
+                                    <div class="text-xs text-gray-500">${timeStr}</div>
                                     <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${commit}</div>
                                     <div class="text-xs text-gray-500 mt-1">${deployments.length} étapes</div>
                                     <div class="text-xs ${this.getStatusColor(finalStatus)} mt-1 font-medium">${this.getStatusText(finalStatus)}</div>
