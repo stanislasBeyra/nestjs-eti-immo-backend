@@ -156,7 +156,7 @@
                         console.error('❌ Erreur historique:', historyResponse.status, historyResponse.statusText);
                     }
 
-                    // Charger les durées actuelles
+                    // Charger les durées actuelles pour le header
                     console.log('⏱️ Chargement des durées...');
                     const durationsResponse = await fetch('/api/deploy/durations');
                     console.log('⏱️ Réponse durées:', durationsResponse.status, durationsResponse.ok);
@@ -167,19 +167,6 @@
                         this.updateHeaderDurations(durations);
                     } else {
                         console.error('❌ Erreur durées:', durationsResponse.status, durationsResponse.statusText);
-                    }
-
-                    // Charger le statut actuel
-                    console.log('📊 Chargement du statut...');
-                    const statusResponse = await fetch('/api/deploy/status');
-                    console.log('📊 Réponse statut:', statusResponse.status, statusResponse.ok);
-                    
-                    if (statusResponse.ok) {
-                        const status = await statusResponse.json();
-                        console.log('📊 Données statut:', status);
-                        this.updateCurrentStatus(status);
-                    } else {
-                        console.error('❌ Erreur statut:', statusResponse.status, statusResponse.statusText);
                     }
 
                 } catch (error) {
@@ -214,12 +201,11 @@
                     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                     
                     // Utiliser les vraies données du déploiement
-                    // Pour l'instant, on affiche le statut et le message
-                    // Les durées seront ajoutées quand l'API les fournira
-                    const status = deployment.status;
-                    const message = deployment.message;
+                    const status = deployment.status || 'unknown';
+                    const message = deployment.message || 'N/A';
+                    const commit = deployment.commit || 'N/A';
                     
-                    // Formatage basique des durées (à améliorer avec les vraies données)
+                    // Pour l'instant, afficher des durées de base
                     const gitDuration = '--';
                     const depsDuration = '--';
                     const buildDuration = '--';
@@ -233,8 +219,9 @@
                                 <div class="text-center">
                                     <div class="text-xs text-text-muted">${dateStr}</div>
                                     <div class="text-xs text-text-muted">${timeStr}</div>
-                                    <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${deployment.commit || 'N/A'}</div>
+                                    <div class="inline-block bg-gray-600 text-white px-2 py-1 rounded text-xs mt-2">${commit}</div>
                                     <div class="text-xs text-gray-500 mt-1">${message}</div>
+                                    <div class="text-xs ${this.getStatusColor(status)} mt-1 font-medium">${this.getStatusText(status)}</div>
                                 </div>
                             </div>
                             <div class="p-4 border-l flex items-center justify-center">
@@ -296,10 +283,7 @@
                 }
             }
 
-            updateCurrentStatus(status) {
-                // Mettre à jour le statut actuel si nécessaire
-                console.log('Statut actuel:', status);
-            }
+
 
             updateStats(deployments) {
                 const successCount = deployments.filter(d => d.status === 'success').length;

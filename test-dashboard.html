@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">🧪 Test du Dashboard</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4">Test des APIs</h2>
+            
+            <div class="space-y-4">
+                <button onclick="testHistory()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    📚 Tester /api/deploy/history
+                </button>
+                
+                <button onclick="testDurations()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    ⏱️ Tester /api/deploy/durations
+                </button>
+                
+                <button onclick="testStatus()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    📊 Tester /api/deploy/status
+                </button>
+            </div>
+            
+            <div id="results" class="mt-4 p-4 bg-gray-50 rounded min-h-[200px]">
+                <p class="text-gray-500">Cliquez sur un bouton pour tester les APIs...</p>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Test du Webhook</h2>
+            <button onclick="testWebhook()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                🚀 Tester le Webhook
+            </button>
+            <div id="webhook-result" class="mt-4 p-4 bg-gray-50 rounded min-h-[100px]">
+                <p class="text-gray-500">Cliquez pour tester le webhook...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function testHistory() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p class="text-blue-600">🔄 Test de l\'API historique...</p>';
+            
+            try {
+                const response = await fetch('/api/deploy/history');
+                const data = await response.json();
+                
+                results.innerHTML = `
+                    <div class="text-green-600">
+                        <p>✅ API Historique fonctionne !</p>
+                        <p>Status: ${response.status}</p>
+                        <p>Déploiements: ${data.deployments ? data.deployments.length : 0}</p>
+                        <pre class="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="text-red-600">
+                        <p>❌ Erreur API Historique</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testDurations() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p class="text-blue-600">🔄 Test de l\'API durées...</p>';
+            
+            try {
+                const response = await fetch('/api/deploy/durations');
+                const data = await response.json();
+                
+                results.innerHTML = `
+                    <div class="text-green-600">
+                        <p>✅ API Durées fonctionne !</p>
+                        <p>Status: ${response.status}</p>
+                        <pre class="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="text-red-600">
+                        <p>❌ Erreur API Durées</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testStatus() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p class="text-blue-600">🔄 Test de l\'API statut...</p>';
+            
+            try {
+                const response = await fetch('/api/deploy/status');
+                const data = await response.json();
+                
+                results.innerHTML = `
+                    <div class="text-green-600">
+                        <p>✅ API Statut fonctionne !</p>
+                        <p>Status: ${response.status}</p>
+                        <pre class="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="text-red-600">
+                        <p>❌ Erreur API Statut</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testWebhook() {
+            const results = document.getElementById('webhook-result');
+            results.innerHTML = '<p class="text-blue-600">🔄 Test du webhook...</p>';
+            
+            try {
+                const response = await fetch('/api/deploy/webhook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ref: 'refs/heads/devs',
+                        head_commit: {
+                            id: 'test123',
+                            message: 'Test webhook depuis dashboard'
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                results.innerHTML = `
+                    <div class="text-green-600">
+                        <p>✅ Webhook fonctionne !</p>
+                        <p>Status: ${response.status}</p>
+                        <pre class="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="text-red-600">
+                        <p>❌ Erreur Webhook</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

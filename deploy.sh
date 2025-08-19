@@ -61,7 +61,7 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
                 echo "{\"status\": \"$1\", \"message\": \"$2\", \"timestamp\": \"$(date)\"}" > $STATUS_FILE
             }
 
-                        # Fonction pour sauvegarder l'historique
+            # Fonction pour sauvegarder l'historique (version simple)
             save_deployment_history() {
                 local status=$1
                 local message=$2
@@ -75,38 +75,24 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
                     echo "📁 Fichier d'historique créé: $history_file" >> $LOG_FILE 2>&1
                 fi
                 
-                # Lire l'historique existant
-                local history_content=$(cat "$history_file")
-                echo "📖 Historique existant lu: $history_content" >> $LOG_FILE 2>&1
-                
                 # Créer la nouvelle entrée
                 local commit_hash=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')
                 local new_entry="{\"id\": \"$(date +%s)\", \"status\": \"$status\", \"message\": \"$message\", \"timestamp\": \"$(date)\", \"branch\": \"$BRANCH\", \"commit\": \"$commit_hash\"}"
                 
                 echo "🆕 Nouvelle entrée: $new_entry" >> $LOG_FILE 2>&1
                 
-                # Ajouter la nouvelle entrée au début de l'historique
-                # Utiliser une approche plus simple sans jq
-                if [ "$history_content" = '{"deployments": []}' ]; then
+                # Approche simple : ajouter à la fin
+                local current_content=$(cat "$history_file" 2>/dev/null || echo '{"deployments": []}')
+                
+                if [ "$current_content" = '{"deployments": []}' ]; then
                     # Premier déploiement
-                    local updated_history="{\"deployments\": [$new_entry]}"
+                    echo "{\"deployments\": [$new_entry]}" > "$history_file"
                 else
-                    # Ajouter au début
-                    local updated_history=$(echo "$history_content" | sed 's/\[/['"$new_entry"',/')
+                    # Ajouter à la fin
+                    echo "$current_content" | sed 's/\]/,'"$new_entry"']/' > "$history_file"
                 fi
                 
-                echo "📝 Historique mis à jour: $updated_history" >> $LOG_FILE 2>&1
-                
-                # Sauvegarder l'historique mis à jour
-                echo "$updated_history" > "$history_file"
-                
-                # Vérifier que le fichier a été écrit
-                if [ -f "$history_file" ]; then
-                    echo "✅ Historique sauvegardé avec succès dans: $history_file" >> $LOG_FILE 2>&1
-                    echo "📊 Contenu final: $(cat "$history_file")" >> $LOG_FILE 2>&1
-                else
-                    echo "❌ Erreur: Impossible de sauvegarder l'historique" >> $LOG_FILE 2>&1
-                fi
+                echo "✅ Historique mis à jour dans: $history_file" >> $LOG_FILE 2>&1
             }
 
         # Fonction pour calculer et sauvegarder les durées des étapes
