@@ -61,18 +61,13 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
                 echo "{\"status\": \"$1\", \"message\": \"$2\", \"timestamp\": \"$(date)\"}" > $STATUS_FILE
             }
 
-                        # Variables pour le déploiement en cours
-            DEPLOYMENT_START_TIME=$(date +%s)
-            DEPLOYMENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')
-            DEPLOYMENT_ID=$(date +%s)
-            
-            # Fonction pour sauvegarder l'historique (version ultra-simple et robuste)
+                        # Fonction pour sauvegarder l'historique
             save_deployment_history() {
                 local status=$1
                 local message=$2
                 local history_file=$APP_DIR/public/deploy-history.json
                 
-                echo "💾 Mise à jour du déploiement en cours: $status - $message" >> $LOG_FILE 2>&1
+                echo "💾 Sauvegarde de l'historique: $status - $message" >> $LOG_FILE 2>&1
                 
                 # Créer le fichier d'historique s'il n'existe pas
                 if [ ! -f "$history_file" ]; then
@@ -80,36 +75,35 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
                     echo "📁 Fichier d'historique créé: $history_file" >> $LOG_FILE 2>&1
                 fi
                 
-                # Créer l'entrée du déploiement
-                local deployment_entry="{\"id\": \"$DEPLOYMENT_ID\", \"status\": \"$status\", \"message\": \"$message\", \"timestamp\": \"$(date)\", \"branch\": \"$BRANCH\", \"commit\": \"$DEPLOYMENT_COMMIT\", \"start_time\": \"$DEPLOYMENT_START_TIME\"}"
+                # Lire l'historique existant
+                local history_content=$(cat "$history_file")
+                echo "📖 Historique existant lu: $history_content" >> $LOG_FILE 2>&1
                 
-                echo "🆕 Entrée du déploiement: $deployment_entry" >> $LOG_FILE 2>&1
+                # Créer la nouvelle entrée
+                local commit_hash=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')
+                local new_entry="{\"id\": \"$(date +%s)\", \"status\": \"$status\", \"message\": \"$message\", \"timestamp\": \"$(date)\", \"branch\": \"$BRANCH\", \"commit\": \"$commit_hash\"}"
                 
-                # Approche ultra-simple : remplacer complètement le fichier
-                # Lire le contenu actuel
-                local current_content=$(cat "$history_file" 2>/dev/null || echo '{"deployments": []}')
+                echo "🆕 Nouvelle entrée: $new_entry" >> $LOG_FILE 2>&1
                 
-                # Vérifier si c'est du JSON valide
-                if ! echo "$current_content" | grep -q '^[[:space:]]*{.*}[[:space:]]*$'; then
-                    echo "⚠️ JSON invalide détecté, réinitialisation..." >> $LOG_FILE 2>&1
-                    current_content='{"deployments": []}'
-                fi
-                
-                # Si c'est le premier déploiement ou si le fichier est vide
-                if [ "$current_content" = '{"deployments": []}' ] || [ "$current_content" = "" ]; then
-                    echo "📝 Premier déploiement, création de l'entrée" >> $LOG_FILE 2>&1
-                    echo "{\"deployments\": [$deployment_entry]}" > "$history_file"
+                # Ajouter la nouvelle entrée au début de l'historique
+                # Utiliser une approche plus simple sans jq
+                if [ "$history_content" = '{"deployments": []}' ]; then
+                    # Premier déploiement
+                    local updated_history="{\"deployments\": [$new_entry]}"
                 else
-                    # Ajouter au début (remplacer le premier [ par [nouvelle_entrée,)
-                    echo "📝 Ajout d'une nouvelle entrée" >> $LOG_FILE 2>&1
-                    local updated_content=$(echo "$current_content" | sed 's/\[/['"$deployment_entry"',/')
-                    echo "$updated_content" > "$history_file"
+                    # Ajouter au début
+                    local updated_history=$(echo "$history_content" | sed 's/\[/['"$new_entry"',/')
                 fi
                 
-                # Vérifier que le fichier est valide
+                echo "📝 Historique mis à jour: $updated_history" >> $LOG_FILE 2>&1
+                
+                # Sauvegarder l'historique mis à jour
+                echo "$updated_history" > "$history_file"
+                
+                # Vérifier que le fichier a été écrit
                 if [ -f "$history_file" ]; then
-                    echo "✅ Historique mis à jour dans: $history_file" >> $LOG_FILE 2>&1
-                    echo "📊 Contenu: $(cat "$history_file")" >> $LOG_FILE 2>&1
+                    echo "✅ Historique sauvegardé avec succès dans: $history_file" >> $LOG_FILE 2>&1
+                    echo "📊 Contenu final: $(cat "$history_file")" >> $LOG_FILE 2>&1
                 else
                     echo "❌ Erreur: Impossible de sauvegarder l'historique" >> $LOG_FILE 2>&1
                 fi
