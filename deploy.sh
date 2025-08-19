@@ -1,10 +1,18 @@
 #!/bin/bash
 
-# Configuration
-APP_DIR="/home/partenai/public_html/nestjs/git_update"
-BRANCH=devs
-LOG_FILE=$APP_DIR/deploy.log
-STATUS_FILE=$APP_DIR/public/deploy-status.json
+            # Configuration
+            APP_DIR="/home/partenai/public_html/nestjs/git_update"
+            BRANCH=devs
+            LOG_FILE=$APP_DIR/deploy.log
+            STATUS_FILE=$APP_DIR/public/deploy-status.json
+            
+            # Variables pour le calcul des durées
+            START_TIME=$(date +%s)
+            GIT_START_TIME=0
+            DEPS_START_TIME=0
+            BUILD_START_TIME=0
+            CLEAN_START_TIME=0
+            RESTART_START_TIME=0
 
 # Configuration pour cPanel Node.js App
 export NODE_ENV=production
@@ -73,15 +81,52 @@ echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
                 # Ajouter la nouvelle entrée au début de l'historique
                 local updated_history=$(echo "$history_content" | jq --argjson entry "$new_entry" '.deployments = [$entry] + .deployments[0:9]' 2>/dev/null || echo "$history_content")
                 
-                # Sauvegarder l'historique mis à jour
-                echo "$updated_history" > "$history_file"
-            }
+                            # Sauvegarder l'historique mis à jour
+            echo "$updated_history" > "$history_file"
+        }
+
+        # Fonction pour calculer et sauvegarder les durées des étapes
+        save_step_durations() {
+            local current_time=$(date +%s)
+            local durations_file=$APP_DIR/public/deploy-durations.json
+            
+            # Calculer les durées (en secondes)
+            local git_duration=$((DEPS_START_TIME - GIT_START_TIME))
+            local deps_duration=$((BUILD_START_TIME - DEPS_START_TIME))
+            local build_duration=$((CLEAN_START_TIME - BUILD_START_TIME))
+            local clean_duration=$((RESTART_START_TIME - CLEAN_START_TIME))
+            local restart_duration=$((current_time - RESTART_START_TIME))
+            
+            # Créer l'objet des durées
+            local durations_json="{
+                \"timestamp\": \"$(date)\",
+                \"durations\": {
+                    \"git\": $git_duration,
+                    \"dependencies\": $deps_duration,
+                    \"build\": $build_duration,
+                    \"clean\": $clean_duration,
+                    \"restart\": $restart_duration
+                }
+            }"
+            
+            # Sauvegarder les durées
+            echo "$durations_json" > "$durations_file"
+            
+            # Log des durées
+            echo "⏱️ Durées des étapes:" >> $LOG_FILE 2>&1
+            echo "   - Git Sync: ${git_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Dépendances: ${deps_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Build: ${build_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Nettoyage: ${clean_duration}s" >> $LOG_FILE 2>&1
+            echo "   - Redémarrage: ${restart_duration}s" >> $LOG_FILE 2>&1
+        }
 
             # Mettre à jour le statut initial
             update_status "starting" "Déploiement en cours..."
             save_deployment_history "starting" "Déploiement en cours..."
 
             echo "[1/5] 📥 Synchronisation Git..." >> $LOG_FILE 2>&1
+            GIT_START_TIME=$(date +%s)
             update_status "pulling" "Synchronisation avec le dépôt distant..."
             save_deployment_history "pulling" "Synchronisation Git en cours..."
 
@@ -116,6 +161,7 @@ fi
 
 if [ $? -eq 0 ]; then
                     echo "[2/5] 📦 Installation des dépendances..." >> $LOG_FILE 2>&1
+                DEPS_START_TIME=$(date +%s)
                 update_status "installing" "Installation des dépendances..."
                 save_deployment_history "installing" "Installation des dépendances..."
 
@@ -142,6 +188,7 @@ if [ $? -eq 0 ]; then
 
                         if [ $? -eq 0 ]; then
                         echo "[3/5] 🔨 Compilation du projet..." >> $LOG_FILE 2>&1
+                        BUILD_START_TIME=$(date +%s)
                         update_status "building" "Compilation du projet..."
                         save_deployment_history "building" "Compilation du projet..."
 
@@ -173,6 +220,7 @@ if [ $? -eq 0 ]; then
 
                             if [ $? -eq 0 ]; then
                         echo "[4/5] 🔧 Nettoyage et optimisation..." >> $LOG_FILE 2>&1
+                        CLEAN_START_TIME=$(date +%s)
                         update_status "cleaning" "Nettoyage et optimisation..."
                         save_deployment_history "cleaning" "Nettoyage et optimisation..."
 
@@ -190,6 +238,7 @@ if [ $? -eq 0 ]; then
 
                                 if [ $? -eq 0 ]; then
                         echo "[5/5] 🔄 Redémarrage de l'application..." >> $LOG_FILE 2>&1
+                        RESTART_START_TIME=$(date +%s)
                         update_status "restarting" "Redémarrage de l'application..."
                         save_deployment_history "restarting" "Redémarrage de l'application..."
 
@@ -210,6 +259,9 @@ if [ $? -eq 0 ]; then
                                         echo "✅ Déploiement terminé avec succès le $(date)" >> $LOG_FILE 2>&1
                         update_status "success" "Déploiement terminé avec succès"
                         save_deployment_history "success" "Déploiement terminé avec succès"
+                        
+                        # Calculer et sauvegarder les durées des étapes
+                        save_step_durations
                 
                 # Informations finales
                 echo "🎉 Déploiement réussi !" >> $LOG_FILE 2>&1

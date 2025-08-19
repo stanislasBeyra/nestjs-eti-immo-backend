@@ -300,6 +300,114 @@
             margin: 5px 0;
         }
 
+        /* Timeline des étapes avec durées */
+        .timeline-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .timeline-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timeline-header h3 {
+            color: #2c3e50;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .timeline-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            padding: 0 10px;
+        }
+
+        .timeline-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .timeline-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -7.5px;
+            width: 15px;
+            height: 2px;
+            background: #dee2e6;
+            transform: translateY(-50%);
+        }
+
+        .timeline-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-duration {
+            background: #d4edda;
+            color: #155724;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            min-height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #c3e6cb;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-duration.active {
+            background: #fff3cd;
+            color: #856404;
+            border-color: #ffeaa7;
+            animation: pulse 2s infinite;
+        }
+
+        .timeline-duration.completed {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+
+        .timeline-duration.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive pour mobile */
+        @media (max-width: 768px) {
+            .timeline-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .timeline-step:not(:last-child)::after {
+                display: none;
+            }
+        }
+
         .auto-refresh {
             display: flex;
             align-items: center;
@@ -466,6 +574,35 @@
                         <div id="label5" class="step-label">Redémarrage</div>
                     </div>
                 </div>
+
+                <!-- Timeline des étapes avec durées -->
+                <div class="timeline-section">
+                    <div class="timeline-header">
+                        <h3>⏱️ Durée des Étapes</h3>
+                    </div>
+                    <div class="timeline-container">
+                        <div class="timeline-step">
+                            <div class="timeline-label">Git Sync</div>
+                            <div class="timeline-duration" id="duration-git">--</div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-label">Dépendances</div>
+                            <div class="timeline-duration" id="duration-deps">--</div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-label">Build</div>
+                            <div class="timeline-duration" id="duration-build">--</div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-label">Nettoyage</div>
+                            <div class="timeline-duration" id="duration-clean">--</div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="timeline-label">Redémarrage</div>
+                            <div class="timeline-duration" id="duration-restart">--</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -518,6 +655,7 @@
                 this.loadStatus();
                 this.loadLogs();
                 this.loadHistory();
+                this.loadDurations();
                 this.startAutoRefresh();
             }
 
@@ -669,6 +807,56 @@
                 container.innerHTML = historyHTML;
             }
 
+            async loadDurations() {
+                try {
+                    const response = await fetch('/api/deploy/durations');
+                    if (response.ok) {
+                        const durations = await response.json();
+                        this.updateDurations(durations);
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du chargement des durées:', error);
+                }
+            }
+
+            updateDurations(durations) {
+                // Mettre à jour chaque étape avec sa durée
+                if (durations.durations) {
+                    this.updateDuration('git', durations.durations.git);
+                    this.updateDuration('deps', durations.durations.dependencies);
+                    this.updateDuration('build', durations.durations.build);
+                    this.updateDuration('clean', durations.durations.clean);
+                    this.updateDuration('restart', durations.durations.restart);
+                }
+            }
+
+            updateDuration(step, seconds) {
+                const element = document.getElementById(`duration-${step}`);
+                if (element) {
+                    const duration = this.formatDuration(seconds);
+                    element.textContent = duration;
+                    
+                    // Mettre à jour les classes CSS selon le statut
+                    element.className = 'timeline-duration';
+                    if (seconds > 0) {
+                        element.classList.add('completed');
+                    }
+                }
+            }
+
+            formatDuration(seconds) {
+                if (seconds === 0) return '--';
+                if (seconds < 60) return `${seconds}s`;
+                if (seconds < 3600) {
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    return `${minutes}min ${remainingSeconds}s`;
+                }
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                return `${hours}h ${minutes}min`;
+            }
+
             getStatusText(status) {
                 const statusMap = {
                     'starting': 'Démarrage',
@@ -728,6 +916,7 @@
                 this.autoRefreshInterval = setInterval(() => {
                     this.loadStatus();
                     this.loadLogs();
+                    this.loadDurations();
                 }, 5000);
             }
 

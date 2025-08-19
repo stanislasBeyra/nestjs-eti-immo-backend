@@ -110,6 +110,39 @@ export class DeployController {
       });
     }
   }
+
+  @Get('durations')
+  async getDurations(@Res() res: Response) {
+    try {
+      // Chemin absolu vers le fichier deploy-durations.json
+      const durationsPath = join(__dirname, '..', '..', 'public', 'deploy-durations.json');
+      this.logger.log(`Serving deploy-durations.json from: ${durationsPath}`);
+      
+      if (existsSync(durationsPath)) {
+        const durations = readFileSync(durationsPath, 'utf8');
+        res.setHeader('Content-Type', 'application/json');
+        res.send(durations);
+      } else {
+        res.json({
+          timestamp: new Date().toISOString(),
+          durations: {
+            git: 0,
+            dependencies: 0,
+            build: 0,
+            clean: 0,
+            restart: 0
+          }
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Error in getDurations: ${error.message}`);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la lecture des durées',
+        messageError: error.message
+      });
+    }
+  }
   @Get('testsssss')
   async getTest(@Res() res: Response) {
     return res.send('Test success' + ' ' + __dirname);
