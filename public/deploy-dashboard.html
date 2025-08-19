@@ -208,24 +208,55 @@
 
                 console.log(`✅ ${history.deployments.length} déploiements trouvés, génération des lignes...`);
 
-                const rowsHTML = history.deployments.map(deployment => {
+                // Charger les durées pour chaque déploiement
+                this.loadDurationsForDeployments(history.deployments, container);
+            }
+
+            async loadDurationsForDeployments(deployments, container) {
+                try {
+                    const response = await fetch('/api/deploy/durations');
+                    if (response.ok) {
+                        const durations = await response.json();
+                        this.renderDeploymentsWithDurations(deployments, durations, container);
+                    } else {
+                        this.renderDeploymentsWithDurations(deployments, null, container);
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du chargement des durées:', error);
+                    this.renderDeploymentsWithDurations(deployments, null, container);
+                }
+            }
+
+            renderDeploymentsWithDurations(deployments, durations, container) {
+                const rowsHTML = deployments.map(deployment => {
                     const date = new Date(deployment.timestamp);
                     const dateStr = date.toLocaleDateString('fr-FR', { month: 'long', day: '2-digit' });
                     const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                     
-                    // Utiliser les vraies données du déploiement
-                    // Pour l'instant, on affiche le statut et le message
-                    // Les durées seront ajoutées quand l'API les fournira
-                    const status = deployment.status;
-                    const message = deployment.message;
+                    // Utiliser les durées si disponibles, sinon afficher le statut
+                    let gitDuration = '--';
+                    let depsDuration = '--';
+                    let buildDuration = '--';
+                    let cleanDuration = '--';
+                    let restartDuration = '--';
+                    let totalDuration = '--';
                     
-                    // Formatage basique des durées (à améliorer avec les vraies données)
-                    const gitDuration = '--';
-                    const depsDuration = '--';
-                    const buildDuration = '--';
-                    const cleanDuration = '--';
-                    const restartDuration = '--';
-                    const totalDuration = '--';
+                    // Si c'est le déploiement le plus récent et que nous avons des durées
+                    if (durations && deployment.id === deployments[0].id) {
+                        gitDuration = this.formatDuration(durations.durations.git);
+                        depsDuration = this.formatDuration(durations.durations.dependencies);
+                        buildDuration = this.formatDuration(durations.durations.build);
+                        cleanDuration = this.formatDuration(durations.durations.clean);
+                        restartDuration = this.formatDuration(durations.durations.restart);
+                        
+                        const total = durations.durations.git + durations.durations.dependencies + 
+                                    durations.durations.build + durations.durations.clean + durations.durations.restart;
+                        totalDuration = this.formatDuration(total);
+                    }
+                    
+                    // Déterminer la couleur selon le statut
+                    const statusColor = this.getStatusColor(deployment.status);
+                    const statusText = this.getStatusText(deployment.status);
 
                     return `
                         <div class="grid grid-cols-7 hover:bg-gray-50 transition-colors duration-200">
@@ -278,7 +309,7 @@
                 }).join('');
 
                 container.innerHTML = rowsHTML;
-                this.updateStats(history.deployments);
+                this.updateStats(deployments);
                 this.animateRows();
             }
 
@@ -328,6 +359,20 @@
                 const hours = Math.floor(seconds / 3600);
                 const minutes = Math.floor((seconds % 3600) / 60);
                 return `${hours}h ${minutes}min`;
+            }
+
+            getStatusColor(status) {
+                const colorMap = {
+                    'success': 'text-green-600',
+                    'error': 'text-red-600',
+                    'starting': 'text-yellow-600',
+                    'pulling': 'text-blue-600',
+                    'installing': 'text-purple-600',
+                    'building': 'text-orange-600',
+                    'cleaning': 'text-indigo-600',
+                    'restarting': 'text-pink-600'
+                };
+                return colorMap[status] || 'text-gray-600';
             }
 
             parseDuration(durationStr) {
