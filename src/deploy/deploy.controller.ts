@@ -88,24 +88,59 @@ export class DeployController {
   @Get('history')
   async getHistory(@Res() res: Response) {
     try {
-      // Chemin absolu vers le fichier deploy-history.json
-      const historyPath = join(__dirname, '..', '..', 'public', 'deploy-history.json');
-      this.logger.log(`Serving deploy-history.json from: ${historyPath}`);
-      
-      if (existsSync(historyPath)) {
-        const history = readFileSync(historyPath, 'utf8');
+      // Nouvel historique: structure complète des déploiements
+      const deploymentsPath = join(__dirname, '..', '..', 'public', 'deployments.json');
+      this.logger.log(`Serving deployments.json from: ${deploymentsPath}`);
+
+      if (existsSync(deploymentsPath)) {
+        const history = readFileSync(deploymentsPath, 'utf8');
         res.setHeader('Content-Type', 'application/json');
         res.send(history);
-      } else {
-        res.json({
-          deployments: []
-        });
+        return;
       }
+
+      // Fallback: ancien format si présent
+      const legacyPath = join(__dirname, '..', '..', 'public', 'deploy-history.json');
+      if (existsSync(legacyPath)) {
+        const legacy = readFileSync(legacyPath, 'utf8');
+        res.setHeader('Content-Type', 'application/json');
+        res.send(legacy);
+        return;
+      }
+
+      // Aucun historique
+      res.setHeader('Content-Type', 'application/json');
+      res.send('[]');
     } catch (error) {
       this.logger.error(`Error in getHistory: ${error.message}`);
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la lecture de l\'historique',
+        messageError: error.message
+      });
+    }
+  }
+
+  @Get('current')
+  async getCurrent(@Res() res: Response) {
+    try {
+      const currentPath = join(__dirname, '..', '..', 'public', 'deploy-current.json');
+      this.logger.log(`Serving deploy-current.json from: ${currentPath}`);
+
+      if (existsSync(currentPath)) {
+        const current = readFileSync(currentPath, 'utf8');
+        res.setHeader('Content-Type', 'application/json');
+        res.send(current);
+      } else {
+        res.json({
+          message: 'Aucun déploiement en cours ou terminé récemment'
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Error in getCurrent: ${error.message}`);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la lecture de l\'état courant',
         messageError: error.message
       });
     }
