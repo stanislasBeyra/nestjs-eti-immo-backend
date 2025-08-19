@@ -5,6 +5,8 @@ APP_DIR="/home/partenai/public_html/nestjs/git_update"
 BRANCH=devs
 LOG_FILE=$APP_DIR/deploy.log
 STATUS_FILE=$APP_DIR/public/deploy-status.json
+DEPLOYMENTS_FILE=$APP_DIR/public/deployments.json
+DEPLOYMENT_CURRENT_FILE=$APP_DIR/public/deploy-current.json
 
 # Variables pour le calcul des durées
 START_TIME=$(date +%s)
@@ -13,6 +15,116 @@ DEPS_START_TIME=0
 BUILD_START_TIME=0
 CLEAN_START_TIME=0
 RESTART_START_TIME=0
+
+# Préparer les sorties JSON
+ensure_deploy_output_files() {
+    mkdir -p "$APP_DIR/public" 2>/dev/null || true
+    if [ ! -f "$DEPLOYMENTS_FILE" ]; then
+        echo "[]" > "$DEPLOYMENTS_FILE"
+    fi
+}
+
+# Écrit un enregistrement JSON du déploiement selon la structure demandée.
+# Paramètre optionnel: "success" | "error" | "in_progress" (par défaut)
+write_deployment_record() {
+    local final="${1:-in_progress}"
+    local now=$(date +%s)
+    local created_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    local commit_hash=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')
+
+    # Durées (en secondes)
+    local starting_time=0
+    if [ "$GIT_START_TIME" -gt 0 ]; then
+        starting_time=$((GIT_START_TIME - START_TIME))
+    else
+        starting_time=$((now - START_TIME))
+    fi
+
+    local pulling_time=0
+    if [ "$GIT_START_TIME" -gt 0 ] && [ "$DEPS_START_TIME" -gt 0 ]; then
+        pulling_time=$((DEPS_START_TIME - GIT_START_TIME))
+    elif [ "$GIT_START_TIME" -gt 0 ]; then
+        pulling_time=$((now - GIT_START_TIME))
+    fi
+
+    local installing_time=0
+    if [ "$DEPS_START_TIME" -gt 0 ] && [ "$BUILD_START_TIME" -gt 0 ]; then
+        installing_time=$((BUILD_START_TIME - DEPS_START_TIME))
+    elif [ "$DEPS_START_TIME" -gt 0 ]; then
+        installing_time=$((now - DEPS_START_TIME))
+    fi
+
+    local building_time=0
+    if [ "$BUILD_START_TIME" -gt 0 ] && [ "$CLEAN_START_TIME" -gt 0 ]; then
+        building_time=$((CLEAN_START_TIME - BUILD_START_TIME))
+    elif [ "$BUILD_START_TIME" -gt 0 ]; then
+        building_time=$((now - BUILD_START_TIME))
+    fi
+
+    local cleaning_time=0
+    if [ "$CLEAN_START_TIME" -gt 0 ] && [ "$RESTART_START_TIME" -gt 0 ]; then
+        cleaning_time=$((RESTART_START_TIME - CLEAN_START_TIME))
+    elif [ "$CLEAN_START_TIME" -gt 0 ]; then
+        cleaning_time=$((now - CLEAN_START_TIME))
+    fi
+
+    local restarting_time=0
+    if [ "$RESTART_START_TIME" -gt 0 ]; then
+        restarting_time=$((now - RESTART_START_TIME))
+    fi
+
+    # Statuts par étape
+    local starting_status="in_progress"
+    if [ "$GIT_START_TIME" -gt 0 ]; then starting_status="success"; fi
+
+    local pulling_status="pending"
+    if [ "$DEPS_START_TIME" -gt 0 ]; then pulling_status="success"; elif [ "$GIT_START_TIME" -gt 0 ]; then pulling_status="in_progress"; fi
+
+    local installing_status="pending"
+    if [ "$BUILD_START_TIME" -gt 0 ]; then installing_status="success"; elif [ "$DEPS_START_TIME" -gt 0 ]; then installing_status="in_progress"; fi
+
+    local building_status="pending"
+    if [ "$CLEAN_START_TIME" -gt 0 ]; then building_status="success"; elif [ "$BUILD_START_TIME" -gt 0 ]; then building_status="in_progress"; fi
+
+    local cleaning_status="pending"
+    if [ "$RESTART_START_TIME" -gt 0 ]; then cleaning_status="success"; elif [ "$CLEAN_START_TIME" -gt 0 ]; then cleaning_status="in_progress"; fi
+
+    local restarting_status="pending"
+    if [ "$RESTART_START_TIME" -gt 0 ]; then restarting_status="in_progress"; fi
+    if [ "$final" = "success" ] || [ "$final" = "error" ]; then restarting_status="$final"; fi
+
+    local total_time=$((now - START_TIME))
+    local id="$START_TIME"
+
+    # Construire le JSON
+    local json
+    json=$(printf '{%s}' \
+"\"id\": $id, \"branch\": \"${BRANCH}\", \"commit_hash\": \"${commit_hash}\", \n\
+\"starting_status\": \"${starting_status}\", \"starting_time\": ${starting_time}, \n\
+\"pulling_status\": \"${pulling_status}\", \"pulling_time\": ${pulling_time}, \n\
+\"installing_status\": \"${installing_status}\", \"installing_time\": ${installing_time}, \n\
+\"building_status\": \"${building_status}\", \"building_time\": ${building_time}, \n\
+\"cleaning_status\": \"${cleaning_status}\", \"cleaning_time\": ${cleaning_time}, \n\
+\"restarting_status\": \"${restarting_status}\", \"restarting_time\": ${restarting_time}, \n\
+\"final_status\": \"${final}\", \"total_time\": ${total_time}, \n\
+\"created_at\": \"${created_at}\"")
+
+    # Écrire l'état courant
+    echo "$json" > "$DEPLOYMENT_CURRENT_FILE"
+
+    # Ajouter à l'historique uniquement si finalisé
+    if [ "$final" != "in_progress" ]; then
+        local current
+        current=$(cat "$DEPLOYMENTS_FILE" 2>/dev/null || echo "[]")
+        if [ "$current" = "[]" ]; then
+            echo "[$json]" > "$DEPLOYMENTS_FILE"
+        else
+            echo "$current" | sed 's/\]$/'", $json]"/ > "$DEPLOYMENTS_FILE"
+        fi
+    fi
+
+    echo "📝 Écriture du registre de déploiement ($final) dans $DEPLOYMENT_CURRENT_FILE" >> $LOG_FILE 2>&1
+}
 
 # Configuration pour cPanel Node.js App
 export NODE_ENV=production
@@ -55,6 +167,9 @@ else
 fi
 
 echo "🚀 Déploiement lancé le $(date)" > $LOG_FILE 2>&1
+
+# Initialisation des fichiers de sortie
+ensure_deploy_output_files
 
 # Fonction pour mettre à jour le statut
 update_status() {
@@ -134,12 +249,14 @@ save_step_durations() {
 # Mettre à jour le statut initial
 update_status "starting" "Déploiement en cours..."
 save_deployment_history "starting" "Déploiement en cours..."
+write_deployment_record "in_progress"
 
 # Étape 1: Synchronisation Git
 echo "[1/5] 📥 Synchronisation Git..." >> $LOG_FILE 2>&1
 GIT_START_TIME=$(date +%s)
 update_status "pulling" "Synchronisation avec le dépôt distant..."
 save_deployment_history "pulling" "Synchronisation Git en cours..."
+write_deployment_record "in_progress"
 
 # Récupérer les dernières modifications (gestion des branches divergentes)
 echo "📥 Synchronisation avec le dépôt distant..." >> $LOG_FILE 2>&1
@@ -159,6 +276,7 @@ if ! git fetch origin >> $LOG_FILE 2>&1; then
     echo "❌ Erreur lors du fetch Git" >> $LOG_FILE 2>&1
     update_status "error" "Erreur lors du fetch Git"
     save_deployment_history "error" "Erreur lors du fetch Git"
+    write_deployment_record "error"
     exit 1
 fi
 
@@ -170,6 +288,7 @@ if ! git reset --hard origin/$BRANCH >> $LOG_FILE 2>&1; then
         echo "❌ Erreur lors du reset Git" >> $LOG_FILE 2>&1
         update_status "error" "Erreur lors du reset Git"
         save_deployment_history "error" "Erreur lors du reset Git"
+        write_deployment_record "error"
         exit 1
     fi
 fi
@@ -187,6 +306,7 @@ echo "[2/5] 📦 Installation des dépendances..." >> $LOG_FILE 2>&1
 DEPS_START_TIME=$(date +%s)
 update_status "installing" "Installation des dépendances..."
 save_deployment_history "installing" "Installation des dépendances..."
+write_deployment_record "in_progress"
 
 # Aller dans le dossier de l'application
 cd $APP_DIR
@@ -200,6 +320,7 @@ if command -v npm >/dev/null 2>&1; then
         echo "❌ Erreur lors de l'installation des dépendances" >> $LOG_FILE 2>&1
         update_status "error" "Erreur lors de l'installation des dépendances"
         save_deployment_history "error" "Erreur lors de l'installation des dépendances"
+        write_deployment_record "error"
         exit 1
     fi
 else
@@ -212,6 +333,7 @@ echo "[3/5] 🔨 Compilation du projet..." >> $LOG_FILE 2>&1
 BUILD_START_TIME=$(date +%s)
 update_status "building" "Compilation du projet..."
 save_deployment_history "building" "Compilation du projet..."
+write_deployment_record "in_progress"
 
 # Rebuild du projet NestJS
 if command -v npm >/dev/null 2>&1; then
@@ -231,6 +353,7 @@ if command -v npm >/dev/null 2>&1; then
         echo "❌ Erreur lors du build" >> $LOG_FILE 2>&1
         update_status "error" "Erreur lors du build"
         save_deployment_history "error" "Erreur lors du build"
+        write_deployment_record "error"
         exit 1
     fi
 else
@@ -243,6 +366,7 @@ echo "[4/5] 🔧 Nettoyage et optimisation..." >> $LOG_FILE 2>&1
 CLEAN_START_TIME=$(date +%s)
 update_status "cleaning" "Nettoyage et optimisation..."
 save_deployment_history "cleaning" "Nettoyage et optimisation..."
+write_deployment_record "in_progress"
 
 # Nettoyer les fichiers temporaires
 echo "🧹 Nettoyage des fichiers temporaires..." >> $LOG_FILE 2>&1
@@ -261,6 +385,7 @@ echo "[5/5] 🔄 Redémarrage de l'application..." >> $LOG_FILE 2>&1
 RESTART_START_TIME=$(date +%s)
 update_status "restarting" "Redémarrage de l'application..."
 save_deployment_history "restarting" "Redémarrage de l'application..."
+write_deployment_record "in_progress"
 
 # Redémarrer Passenger (cPanel)
 echo "🔄 Redémarrage via Passenger..." >> $LOG_FILE 2>&1
@@ -279,6 +404,7 @@ sleep 10
 echo "✅ Déploiement terminé avec succès le $(date)" >> $LOG_FILE 2>&1
 update_status "success" "Déploiement terminé avec succès"
 save_deployment_history "success" "Déploiement terminé avec succès"
+write_deployment_record "success"
 
 # Calculer et sauvegarder les durées des étapes
 save_step_durations

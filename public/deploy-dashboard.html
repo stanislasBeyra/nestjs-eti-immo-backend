@@ -226,7 +226,7 @@
                     // Trouver le statut final (success ou error)
                     const finalStatus = deployments.find(d => d.status === 'success' || d.status === 'error')?.status || 'unknown';
                     
-                    // Créer les cellules pour chaque étape
+                    // Créer les cellules pour chaque étap
                     const createStageCell = (stageStatus, stageMessage, duration = '--') => {
                         const isCompleted = deployments.some(d => d.status === stageStatus);
                         const isSuccess = isCompleted && stageStatus !== 'error';
