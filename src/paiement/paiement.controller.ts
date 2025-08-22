@@ -7,6 +7,8 @@ import { Paiement, PaiementStatut } from './entities/paiement.entity';
 import { Type } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UnpaidRentService } from './unpaid-rent.service';
+import { UnpaidRentDto } from './dto/unpaid-rent.dto';
 
 class DateRangeQuery {
   @IsOptional()
@@ -25,7 +27,10 @@ class DateRangeQuery {
 @UseGuards(JwtAuthGuard)
 @Controller('paiements')
 export class PaiementController {
-  constructor(private readonly paiementService: PaiementService) {}
+  constructor(
+    private readonly paiementService: PaiementService,
+    private readonly unpaidRentService: UnpaidRentService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Créer un nouveau paiement' })
@@ -36,8 +41,21 @@ export class PaiementController {
     type: Paiement 
   })
   @ApiResponse({ status: 400, description: 'Données invalides' })
-  create(@Body() createPaiementDto: CreatePaiementDto): Promise<Paiement> {
-    return this.paiementService.create(createPaiementDto);
+  async create(@Body() createPaiementDto: CreatePaiementDto) {
+    try {
+      const data = await this.paiementService.create(createPaiementDto);
+      return {
+        success: true,
+        message: 'Paiement créé avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
   @Get()
@@ -47,8 +65,21 @@ export class PaiementController {
     description: 'Liste de tous les paiements',
     type: [Paiement]
   })
-  findAll(): Promise<Paiement[]> {
-    return this.paiementService.findAll();
+  async findAll() {
+    try {
+      const data = await this.paiementService.findAll();
+      return {
+        success: true,
+        message: 'Paiements récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
   @Get('locataire/:locataireId')
@@ -59,8 +90,21 @@ export class PaiementController {
     description: 'Liste des paiements du locataire',
     type: [Paiement]
   })
-  findByLocataire(@Param('locataireId', ParseIntPipe) locataireId: number): Promise<Paiement[]> {
-    return this.paiementService.findByLocataire(locataireId);
+  async findByLocataire(@Param('locataireId', ParseIntPipe) locataireId: number) {
+    try {
+      const data = await this.paiementService.findByLocataire(locataireId);
+      return {
+        success: true,
+        message: 'Paiements du locataire récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
   @Get('property/:propertyId')
@@ -71,8 +115,21 @@ export class PaiementController {
     description: 'Liste des paiements du bien',
     type: [Paiement]
   })
-  findByProperty(@Param('propertyId', ParseIntPipe) propertyId: number): Promise<Paiement[]> {
-    return this.paiementService.findByProperty(propertyId);
+  async findByProperty(@Param('propertyId', ParseIntPipe) propertyId: number) {
+    try {
+      const data = await this.paiementService.findByProperty(propertyId);
+      return {
+        success: true,
+        message: 'Paiements du bien récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
   @Get('date-range')
@@ -84,11 +141,24 @@ export class PaiementController {
     description: 'Liste des paiements de la période',
     type: [Paiement]
   })
-  findByDateRange(@Query() query: DateRangeQuery): Promise<Paiement[]> {
-    if (!query.startDate || !query.endDate) {
-      throw new Error('startDate and endDate are required');
+  async findByDateRange(@Query() query: DateRangeQuery) {
+    try {
+      if (!query.startDate || !query.endDate) {
+        throw new Error('Les dates de début et de fin sont requises');
+      }
+      const data = await this.paiementService.findByDateRange(query.startDate, query.endDate);
+      return {
+        success: true,
+        message: 'Paiements de la période récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
     }
-    return this.paiementService.findByDateRange(query.startDate, query.endDate);
   }
 
   @Get('statut/:statut')
@@ -99,8 +169,21 @@ export class PaiementController {
     description: 'Liste des paiements du statut spécifié',
     type: [Paiement]
   })
-  findByStatut(@Param('statut') statut: PaiementStatut): Promise<Paiement[]> {
-    return this.paiementService.findByStatut(statut);
+  async findByStatut(@Param('statut') statut: PaiementStatut) {
+    try {
+      const data = await this.paiementService.findByStatut(statut);
+      return {
+        success: true,
+        message: 'Paiements par statut récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
   @Get('impayes')
@@ -110,10 +193,118 @@ export class PaiementController {
     description: 'Liste des paiements impayés',
     type: [Paiement]
   })
-  getPaiementsImpayes(): Promise<Paiement[]> {
-    return this.paiementService.getPaiementsImpayes();
+  async getPaiementsImpayes() {
+    try {
+      const data = await this.paiementService.getPaiementsImpayes();
+      return {
+        success: true,
+        message: 'Paiements impayés récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
+  @Get('loyers-impayes')
+  @ApiOperation({ summary: 'Récupérer la liste des loyers impayés' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Liste des loyers impayés récupérée avec succès',
+    type: [UnpaidRentDto]
+  })
+  async getUnpaidRents() {
+    try {
+      const data = await this.unpaidRentService.getUnpaidRentsList();
+      return {
+        success: true,
+        message: 'Loyers impayés récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
+  }
+
+  @Get('locataire/unpaid/:id')
+  @ApiOperation({ summary: 'Récupérer les loyers impayés d\'un locataire' })
+  @ApiParam({ name: 'id', description: 'ID du locataire' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Liste des loyers impayés du locataire',
+  })
+  async getUnpaidRentsByLocataireId(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const data = await this.unpaidRentService.getUnpaidRentsByLocataireId(id);
+      return {
+        success: true,
+        message: 'Loyers impayés du locataire récupérés avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
+  }
+
+  @Get('statistiques-loyers-impayes')
+  @ApiOperation({ summary: 'Récupérer les statistiques des loyers impayés' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Statistiques des loyers impayés récupérées avec succès'
+  })
+  async getUnpaidRentStatistics() {
+    try {
+      const data = await this.unpaidRentService.getUnpaidRentStatistics();
+      return {
+        success: true,
+        message: 'Statistiques des loyers impayés récupérées avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
+  }
+
+  @Post('generer-loyers-impayes')
+  @ApiOperation({ summary: 'Générer manuellement les loyers impayés' })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Loyers impayés générés avec succès'
+  })
+  async generateUnpaidRents() {
+    try {
+      await this.unpaidRentService.generateUnpaidRents();
+      return {
+        success: true,
+        message: 'Loyers impayés générés avec succès',
+        data: null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
+  }
+
+  // Move the :id route AFTER all specific routes
   @Get(':id')
   @ApiOperation({ summary: 'Récupérer un paiement par son ID' })
   @ApiParam({ name: 'id', description: 'ID du paiement' })
@@ -123,8 +314,21 @@ export class PaiementController {
     type: Paiement 
   })
   @ApiResponse({ status: 404, description: 'Paiement non trouvé' })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<Paiement> {
-    return this.paiementService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const data = await this.paiementService.findOne(id);
+      return {
+        success: true,
+        message: 'Paiement récupéré avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
   @Patch(':id')
@@ -138,11 +342,24 @@ export class PaiementController {
   })
   @ApiResponse({ status: 404, description: 'Paiement non trouvé' })
   @ApiResponse({ status: 400, description: 'Données invalides ou paiement déjà payé' })
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updatePaiementDto: UpdatePaiementDto,
-  ): Promise<Paiement> {
-    return this.paiementService.update(id, updatePaiementDto);
+  ) {
+    try {
+      const data = await this.paiementService.update(id, updatePaiementDto);
+      return {
+        success: true,
+        message: 'Paiement mis à jour avec succès',
+        data: data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 
   @Delete(':id')
@@ -151,7 +368,20 @@ export class PaiementController {
   @ApiResponse({ status: 200, description: 'Le paiement a été supprimé avec succès' })
   @ApiResponse({ status: 404, description: 'Paiement non trouvé' })
   @ApiResponse({ status: 400, description: 'Impossible de supprimer un paiement déjà payé' })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.paiementService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    try {
+      await this.paiementService.remove(id);
+      return {
+        success: true,
+        message: 'Paiement supprimé avec succès',
+        data: null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue',
+        error: error.message || error
+      };
+    }
   }
 }

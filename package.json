@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-   "prebuild": "rm -rf dist || true",
+    "prebuild": "rm -rf dist || true",
     "build": "nest build",
     "postbuild": "cp package.json dist/ && cp .env dist/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -31,7 +31,10 @@
     "db:migrate:revert": "npm run migration:revert",
     "db:migrate:show": "npm run migration:show",
     "db:migrate:generate": "npm run migration:generate",
-    "db:reset": "npm run migration:revert && npm run migration:run"
+    "db:reset": "npm run migration:revert && npm run migration:run",
+    "command": "nestjs-command",
+    "generate:unpaid": "nestjs-command generate:unpaid-rents",
+    "list:unpaid": "nestjs-command list:unpaid-rents"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.3",
@@ -52,6 +55,8 @@
     "express": "^5.1.0",
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
+    "nest-commander": "^3.19.0",
+    "nestjs-command": "^3.1.5",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",

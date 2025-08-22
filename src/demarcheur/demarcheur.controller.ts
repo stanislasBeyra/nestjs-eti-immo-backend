@@ -36,7 +36,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -73,7 +73,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -98,7 +98,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -123,7 +123,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -153,7 +153,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -187,7 +187,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -216,7 +216,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -242,7 +242,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -272,7 +272,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -301,7 +301,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
@@ -323,7 +323,7 @@ export class DemarcheurController {
       return {
         success: false,
         message: 'Une erreur est survenue',
-        messageError: error.message
+        error: error.message || error
       };
     }
   }
