@@ -49,7 +49,7 @@ import { DeployModule } from './deploy/deploy.module';
       username: process.env.DB_USERNAME ?? 'kouao',
       password: process.env.DB_PASSWORD ?? 'Stanislas@001',
       database: process.env.DB_NAME ?? 'kouao_gestion_immo',
-      synchronize: false,
+      synchronize: true, // ✅ Changé de false à true
       logging: true,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/migrations/*{.ts,.js}'],

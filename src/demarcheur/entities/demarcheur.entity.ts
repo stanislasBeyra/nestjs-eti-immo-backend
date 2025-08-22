@@ -27,7 +27,7 @@ export class Demarcheur {
 
   @ApiProperty()
   @Column({ type: 'bigint', comment: 'ID de l\'agence qui emploie le démarcheur' })
-  agence_id: number;
+  agence_id?: number;
 
   @ApiProperty()
   @Column({ length: 100, comment: 'Prénom du démarcheur' })

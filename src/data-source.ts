@@ -14,7 +14,7 @@ const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || (() => { throw new Error('DB_USERNAME is required') })(),
   password: process.env.DB_PASSWORD || (() => { throw new Error('DB_PASSWORD is required') })(),
   database: process.env.DB_NAME || (() => { throw new Error('DB_NAME is required') })(),
-  synchronize: false,
+  synchronize: true,
   logging: process.env.NODE_ENV === 'development',
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
