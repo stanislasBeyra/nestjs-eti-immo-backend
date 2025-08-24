@@ -5,6 +5,7 @@ import { Paiement, PaiementStatut, PaiementType } from './entities/paiement.enti
 import { Location, LocationStatut } from '../location/entities/location.entity';
 import { UnpaidRentDto } from './dto/unpaid-rent.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { PaidRentHistoryDto } from './dto/paid-rent.dto';
 
 @Injectable()
 export class UnpaidRentService {
@@ -238,7 +239,7 @@ export class UnpaidRentService {
     /**
      * Récupère les périodes impayées pour un locataire
      */
-    
+
 
     /**
      * Récupère les statistiques des loyers impayés
@@ -338,6 +339,79 @@ export class UnpaidRentService {
             return Array.from(groupedByLocataire.values());
         } catch (error) {
             this.logger.error(`Erreur lors de la récupération des loyers impayés pour le locataire ${locataireId}:`, error);
+            throw error;
+        }
+    }
+
+
+    async getPaidRentsList(): Promise<PaidRentHistoryDto[]> {
+        try {
+            const results = await this.paiementRepository.find({
+                where: {
+                    statut: PaiementStatut.PAYE,
+                    type: PaiementType.LOYER
+                },
+                relations: ['locataire', 'property', 'property.images', 'location'],
+                order: {
+                    date_paiement: 'DESC'
+                }
+            });
+
+            // Grouper les paiements par locataire
+            const groupedByLocataire = new Map<number, any>();
+
+            for (const paiement of results) {
+                const locataireId = paiement.locataire_id;
+
+                if (!groupedByLocataire.has(locataireId)) {
+                    groupedByLocataire.set(locataireId, {
+                        locataire_id: paiement.locataire_id,
+                        locataire_firstname: paiement.locataire?.firstname || '',
+                        locataire_lastname: paiement.locataire?.lastname || '',
+                        locataire_email: paiement.locataire?.email || '',
+                        locataire_mobile: paiement.locataire?.mobile || '',
+                        bien_id: paiement.property_id,
+                        bien_title: paiement.property?.title || '',
+                        localite: paiement.property?.localite || '',
+                        type_maison: paiement.property?.type || '',
+                        categorie: paiement.property?.categorie || '',
+                        date_entree: paiement.location?.date_debut || null,
+                        loyer_mensuel: paiement.location?.loyer || 0,
+                        mois_payes: 0,
+                        montant_total_paye: 0,
+                        derniere_date_paiement: null,
+                        historique_loyers_payes: [],
+                        bien_images: paiement.property || []
+                    });
+                }
+                const locataireData = groupedByLocataire.get(locataireId);
+
+                // Ajouter ce paiement à l'historique
+                locataireData.historique_loyers_payes.push({
+                    paiement_id: paiement.id,
+                    mois: paiement.mois_reference,
+                    annee: paiement.annee_reference,
+                    periode: `${this.getMonthName(paiement.mois_reference || 0)} ${paiement.annee_reference || new Date().getFullYear()}`,
+                    montant_paye: Number(paiement.montant_attendu) || 0,
+                    date_paiement: paiement.date_paiement,
+                    reference_paiement: paiement.reference_transaction || '',
+                    description: paiement.commentaires
+                });
+
+                // Mettre à jour les totaux
+                locataireData.mois_payes += 1;
+                locataireData.montant_total_paye += Number(paiement.montant_attendu) || 0;
+
+                // Mettre à jour la dernière date de paiement
+                if (!locataireData.derniere_date_paiement ||
+                    (paiement.date_paiement && new Date(paiement.date_paiement) > new Date(locataireData.derniere_date_paiement))) {
+                    locataireData.derniere_date_paiement = paiement.date_paiement;
+                }
+            }
+
+            return Array.from(groupedByLocataire.values());
+        } catch (error) {
+            this.logger.error('Erreur lors de la récupération de la liste des loyers impayés:', error);
             throw error;
         }
     }
