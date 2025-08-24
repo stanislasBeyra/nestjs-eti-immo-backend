@@ -9,7 +9,7 @@ import { IsDate, IsEnum, IsOptional } from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UnpaidRentService } from './unpaid-rent.service';
 import { UnpaidRentDto } from './dto/unpaid-rent.dto';
-import { PaidRentDto } from './dto/paid-rent.dto';
+import { PaidRentDto, PaidRentHistoryDto } from './dto/paid-rent.dto';
 
 class DateRangeQuery {
   @IsOptional()
@@ -83,7 +83,33 @@ export class PaiementController {
     }
   }
 
+  @Get('loyer/payer/locataire/:id')
+  @ApiOperation({ summary: 'Récupérer les loyers payés d\'un locataire' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Loyers payés du locataire récupérés avec succès',
+    type: [PaidRentHistoryDto]
+  })
+  async getPaidRentsListByLocataire(@Param('id', ParseIntPipe) locataireId: number) {
+    try {
+      const paidRents = await this.unpaidRentService.getPaidRentsListByLocataire(locataireId);
+      
+      return {
+        success: true,
+        message: 'Loyers payés du locataire récupérés avec succès',
+        data: paidRents,
+        total: paidRents.length
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Une erreur est survenue lors de la récupération des loyers payés',
+        error: error.message || error
+      };
+    }
+  }
 
+  
 
 
 
