@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { DemarcheurService } from './demarcheur.service';
 import { CreateDemarcheurDto } from './dto/create-demarcheur.dto';
@@ -7,13 +7,17 @@ import { Demarcheur, DemarcheurStatus } from './entities/demarcheur.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { AgenceService } from '../agence/agence.service';
 
 @ApiTags('demarcheurs')
 @ApiBearerAuth('JWT-auth')
 @Controller('demarcheurs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class DemarcheurController {
-  constructor(private readonly demarcheurService: DemarcheurService) {}
+  constructor(
+    private readonly demarcheurService: DemarcheurService,
+    private readonly agenceService: AgenceService
+  ) {}
 
   @Post()
   @Roles(1, 2) // Admin et Agent
@@ -24,9 +28,22 @@ export class DemarcheurController {
     type: Demarcheur
   })
   @ApiResponse({ status: 400, description: 'Données invalides ou démarcheur déjà existant' })
-  async create(@Body() createDemarcheurDto: CreateDemarcheurDto): Promise<any> {
+  async create(@Body() createDemarcheurDto: CreateDemarcheurDto, @Request() req): Promise<any> {
     try {
-      const demarcheur = await this.demarcheurService.create(createDemarcheurDto);
+      const agence = await this.agenceService.findByEmail(req.user.email);
+      if (!agence) {
+        return {
+          success: false,
+          message: "Vous n'avez pas la permission de créer un démarcheur",
+          error: 'L\'utilisateur connecté n\'est pas associé à une agence valide'
+        };
+      }
+      
+      const demarcheurData = {
+        ...createDemarcheurDto,
+        agence_id: agence.id
+      };
+      const demarcheur = await this.demarcheurService.create(demarcheurData);
       return {
         success: true,
         message: 'Démarcheur créé avec succès',

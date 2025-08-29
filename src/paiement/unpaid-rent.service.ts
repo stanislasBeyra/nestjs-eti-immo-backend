@@ -160,7 +160,6 @@ export class UnpaidRentService {
                     date_paiement: 'DESC'
                 }
             });
-
             // Grouper les paiements par locataire
             const groupedByLocataire = new Map<number, any>();
 
