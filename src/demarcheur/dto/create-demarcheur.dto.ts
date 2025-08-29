@@ -3,10 +3,6 @@ import { IsString, IsNumber, IsOptional, IsArray, IsEnum, IsEmail, IsDateString,
 import { TypeBien, DemarcheurStatus } from '../entities/demarcheur.entity';
 
 export class CreateDemarcheurDto {
-  @ApiProperty({ description: 'ID de l\'agence qui emploie le démarcheur' })
-  @IsNumber()
-  agence_id: number;
-
   @ApiProperty({ description: 'Prénom du démarcheur' })
   @IsString()
   firstname: string;

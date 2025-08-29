@@ -21,13 +21,17 @@ export class DemarcheurController {
 
   @Post()
   @Roles(1, 2) // Admin et Agent
-  @ApiOperation({ summary: 'Créer un nouveau démarcheur' })
+  @ApiOperation({ 
+    summary: 'Créer un nouveau démarcheur',
+    description: 'L\'agence_id est automatiquement récupéré depuis l\'agence de l\'utilisateur connecté. Il n\'est pas nécessaire de le fournir dans le body.'
+  })
   @ApiResponse({ 
     status: 201, 
     description: 'Démarcheur créé avec succès',
     type: Demarcheur
   })
-  @ApiResponse({ status: 400, description: 'Données invalides ou démarcheur déjà existant' })
+  @ApiResponse({ status: 400, description: 'Données invalides, démarcheur déjà existant ou agence non valide' })
+  @ApiResponse({ status: 403, description: 'L\'utilisateur connecté n\'est pas associé à une agence valide' })
   async create(@Body() createDemarcheurDto: CreateDemarcheurDto, @Request() req): Promise<any> {
     try {
       const agence = await this.agenceService.findByEmail(req.user.email);
