@@ -10,6 +10,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AgenceService } from '../agence/agence.service';
+import { MultipartDataCleanerInterceptor } from '../common/interceptors/multipart-data-cleaner.interceptor';
+import { CleanedTerrainFormData } from './interfaces/cleaned-terrain-form.interface';
 
 @ApiTags('terrains')
 @ApiBearerAuth('JWT-auth')
@@ -138,7 +140,7 @@ export class TerrainController {
 
   @Post()
   @Roles(1, 2) // Admin et Agent
-  @UseInterceptors(FilesInterceptor('images', 10))
+  @UseInterceptors(MultipartDataCleanerInterceptor, FilesInterceptor('images', 10))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ 
     summary: 'Créer un terrain avec images',
@@ -199,9 +201,9 @@ export class TerrainController {
     }
   })
   async create(
-    @Body() terrainData: CreateTerrainFormDto,
+    @Body() terrainData: CleanedTerrainFormData,
     @UploadedFiles() images: Express.Multer.File[],
-    @Request() req
+    @Request() req: any
   ): Promise<any> {
     try {
       const agence = await this.agenceService.findByEmail(req.user.email);
@@ -227,84 +229,40 @@ export class TerrainController {
         }
       }
 
-      // Fonction helper pour nettoyer les valeurs
-      const cleanValue = (value: any): any => {
-        if (value === 'undefined' || value === '' || value === null) {
-          return undefined;
-        }
-        return value;
-      };
-
-      const cleanNumericValue = (value: any): number | undefined => {
-        const cleaned = cleanValue(value);
-        if (cleaned === undefined) return undefined;
-        const parsed = parseFloat(cleaned);
-        return isNaN(parsed) ? undefined : parsed;
-      };
-
-      const cleanIntegerValue = (value: any): number | undefined => {
-        const cleaned = cleanValue(value);
-        if (cleaned === undefined) return undefined;
-        const parsed = parseInt(cleaned);
-        return isNaN(parsed) ? undefined : parsed;
-      };
-
-      const cleanBooleanValue = (value: any): boolean | undefined => {
-        const cleaned = cleanValue(value);
-        if (cleaned === undefined) return undefined;
-        return cleaned === 'true';
-      };
-
-      const cleanArrayValue = (value: any): string[] | undefined => {
-        if (!value) return undefined;
-        if (Array.isArray(value)) {
-          const filtered = value.filter(v => v && v !== 'undefined' && v !== '');
-          return filtered.length > 0 ? filtered : undefined;
-        }
-        const cleaned = cleanValue(value);
-        return cleaned ? [cleaned] : undefined;
-      };
-
-      // Préparation des données du terrain avec nettoyage
+      // Préparation des données du terrain - l'intercepteur a déjà nettoyé les données
       const createTerrainDto: CreateTerrainDto = {
-        // Champs string obligatoires
+        // Champs obligatoires
         title: terrainData.title,
         address: terrainData.address,
         localite: terrainData.localite,
+        prix_vente: terrainData.prix_vente,
+        superficie: terrainData.superficie,
         type: terrainData.type,
         
-        // Champs string optionnels
-        description: cleanValue(terrainData.description),
-        commune: cleanValue(terrainData.commune),
-        zone: cleanValue(terrainData.zone),
-        status: cleanValue(terrainData.status),
-        titre_foncier: cleanValue(terrainData.titre_foncier),
-        reference_cadastrale: cleanValue(terrainData.reference_cadastrale),
-        reference: cleanValue(terrainData.reference),
-        servitudes: cleanValue(terrainData.servitudes),
-        coordonnees_gps: cleanValue(terrainData.coordonnees_gps),
-        notes_internes: cleanValue(terrainData.notes_internes),
-        date_mise_vente: cleanValue(terrainData.date_mise_vente),
-
-        // Conversion des nombres
-        prix_vente: parseFloat(terrainData.prix_vente),
-        superficie: parseFloat(terrainData.superficie),
-        superficie_constructible: cleanNumericValue(terrainData.superficie_constructible),
-        prix_m2: cleanNumericValue(terrainData.prix_m2),
-        frais_agence: cleanNumericValue(terrainData.frais_agence),
-        proprietaire_id: cleanIntegerValue(terrainData.proprietaire_id),
-        latitude: cleanNumericValue(terrainData.latitude),
-        longitude: cleanNumericValue(terrainData.longitude),
-
-        // Conversion des booleans
-        constructible: cleanBooleanValue(terrainData.constructible),
-        viabilise: cleanBooleanValue(terrainData.viabilise),
-        acces_route: cleanBooleanValue(terrainData.acces_route),
-        commission_negociable: cleanBooleanValue(terrainData.commission_negociable),
-
-        // Gestion des tableaux
-        equipements: cleanArrayValue(terrainData.equipements),
-        documents: cleanArrayValue(terrainData.documents),
+        // Champs optionnels - directement assignés car déjà nettoyés par l'intercepteur
+        description: terrainData.description,
+        commune: terrainData.commune,
+        prix_m2: terrainData.prix_m2,
+        superficie_constructible: terrainData.superficie_constructible,
+        zone: terrainData.zone,
+        status: terrainData.status,
+        constructible: terrainData.constructible,
+        viabilise: terrainData.viabilise,
+        acces_route: terrainData.acces_route,
+        commission_negociable: terrainData.commission_negociable,
+        titre_foncier: terrainData.titre_foncier,
+        reference_cadastrale: terrainData.reference_cadastrale,
+        reference: terrainData.reference,
+        servitudes: terrainData.servitudes,
+        latitude: terrainData.latitude,
+        longitude: terrainData.longitude,
+        coordonnees_gps: terrainData.coordonnees_gps,
+        frais_agence: terrainData.frais_agence,
+        proprietaire_id: terrainData.proprietaire_id,
+        date_mise_vente: terrainData.date_mise_vente,
+        equipements: terrainData.equipements,
+        documents: terrainData.documents,
+        notes_internes: terrainData.notes_internes,
 
         // Images
         main_image: mainImagePath,
