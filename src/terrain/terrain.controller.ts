@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request, ParseIntPipe, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { TerrainService } from './terrain.service';
 import { CreateTerrainDto } from './dto/create-terrain.dto';
 import { UpdateTerrainDto } from './dto/update-terrain.dto';
+import { CreateTerrainFormDto } from './dto/create-terrain-form.dto';
 import { Terrain, TerrainStatus, TerrainType } from './entities/terrain.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -19,35 +21,248 @@ export class TerrainController {
     private readonly agenceService: AgenceService
   ) {}
 
+  @Post('upload-image')
+  @Roles(1, 2) // Admin et Agent
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Uploader une image pour un terrain' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Image uploadée avec succès',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        data: {
+          type: 'object',
+          properties: {
+            filename: { type: 'string' },
+            path: { type: 'string' },
+            size: { type: 'number' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Fichier non valide' })
+  async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<any> {
+    try {
+      if (!file) {
+        return {
+          success: false,
+          message: 'Aucun fichier fourni',
+          error: 'Le champ image est requis'
+        };
+      }
+
+      const imagePath = `/uploads/terrain/${file.filename}`;
+      
+      return {
+        success: true,
+        message: 'Image uploadée avec succès',
+        data: {
+          filename: file.filename,
+          path: imagePath,
+          size: file.size,
+          mimetype: file.mimetype
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Erreur lors de l\'upload',
+        error: error.message || error
+      };
+    }
+  }
+
+  @Post('upload-images')
+  @Roles(1, 2) // Admin et Agent
+  @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Uploader plusieurs images pour un terrain' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Images uploadées avec succès',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              filename: { type: 'string' },
+              path: { type: 'string' },
+              size: { type: 'number' }
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Fichiers non valides' })
+  async uploadImages(@UploadedFiles() files: Express.Multer.File[]): Promise<any> {
+    try {
+      if (!files || files.length === 0) {
+        return {
+          success: false,
+          message: 'Aucun fichier fourni',
+          error: 'Le champ images est requis'
+        };
+      }
+
+      const uploadedImages = files.map(file => ({
+        filename: file.filename,
+        path: `/uploads/terrain/${file.filename}`,
+        size: file.size,
+        mimetype: file.mimetype
+      }));
+
+      return {
+        success: true,
+        message: `${files.length} image(s) uploadée(s) avec succès`,
+        data: uploadedImages
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Erreur lors de l\'upload',
+        error: error.message || error
+      };
+    }
+  }
+
   @Post()
   @Roles(1, 2) // Admin et Agent
+  @UseInterceptors(FilesInterceptor('images', 10))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ 
-    summary: 'Mettre un terrain en vente',
-    description: 'L\'agence_id est automatiquement récupéré depuis l\'agence de l\'utilisateur connecté.'
+    summary: 'Créer un terrain avec images',
+    description: 'Crée un terrain avec toutes ses informations et images en une seule requête multipart/form-data. L\'agence_id est automatiquement récupéré depuis l\'agence de l\'utilisateur connecté.'
   })
   @ApiResponse({ 
     status: 201, 
-    description: 'Terrain mis en vente avec succès',
-    type: Terrain
+    description: 'Terrain créé avec succès',
+    type: Terrain,
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Terrain créé avec succès' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'number' },
+            agence_id: { type: 'number' },
+            title: { type: 'string' },
+            prix_vente: { type: 'string' },
+            superficie: { type: 'string' },
+            main_image: { type: 'string', example: '/uploads/terrain/terrain-123456789.jpg' },
+            other_images: { 
+              type: 'array', 
+              items: { type: 'string' },
+              example: ['/uploads/terrain/terrain-123456790.jpg', '/uploads/terrain/terrain-123456791.jpg']
+            },
+            images_uploaded: { type: 'number', example: 3 },
+            created_at: { type: 'string', format: 'date-time' }
+          }
+        }
+      }
+    }
   })
-  @ApiResponse({ status: 400, description: 'Données invalides' })
-  @ApiResponse({ status: 403, description: 'Utilisateur non associé à une agence valide' })
-  async create(@Body() createTerrainDto: CreateTerrainDto, @Request() req): Promise<any> {
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Données invalides',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: 'Une erreur est survenue' },
+        error: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Utilisateur non associé à une agence valide',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        message: { type: 'string', example: "Vous n'avez pas la permission de créer un terrain" },
+        error: { type: 'string', example: "L'utilisateur connecté n'est pas associé à une agence valide" }
+      }
+    }
+  })
+  async create(
+    @Body() terrainData: CreateTerrainFormDto,
+    @UploadedFiles() images: Express.Multer.File[],
+    @Request() req
+  ): Promise<any> {
     try {
       const agence = await this.agenceService.findByEmail(req.user.email);
       if (!agence) {
         return {
           success: false,
-          message: "Vous n'avez pas la permission de mettre un terrain en vente",
+          message: "Vous n'avez pas la permission de créer un terrain",
           error: 'L\'utilisateur connecté n\'est pas associé à une agence valide'
         };
       }
 
+      // Traitement des images uploadées
+      let mainImagePath: string | undefined;
+      let otherImagesPath: string[] = [];
+
+      if (images && images.length > 0) {
+        // La première image devient l'image principale
+        mainImagePath = `/uploads/terrain/${images[0].filename}`;
+        
+        // Les autres images deviennent les images secondaires
+        if (images.length > 1) {
+          otherImagesPath = images.slice(1).map(img => `/uploads/terrain/${img.filename}`);
+        }
+      }
+
+      // Préparation des données du terrain
+      const createTerrainDto: CreateTerrainDto = {
+        ...terrainData,
+        // Conversion des strings en nombres si nécessaire
+        prix_vente: parseFloat(terrainData.prix_vente),
+        superficie: parseFloat(terrainData.superficie),
+        superficie_constructible: terrainData.superficie_constructible ? parseFloat(terrainData.superficie_constructible) : undefined,
+        prix_m2: terrainData.prix_m2 ? parseFloat(terrainData.prix_m2) : undefined,
+        frais_agence: terrainData.frais_agence ? parseFloat(terrainData.frais_agence) : undefined,
+        proprietaire_id: terrainData.proprietaire_id ? parseInt(terrainData.proprietaire_id) : undefined,
+        latitude: terrainData.latitude ? parseFloat(terrainData.latitude) : undefined,
+        longitude: terrainData.longitude ? parseFloat(terrainData.longitude) : undefined,
+        // Conversion des booleans
+        constructible: terrainData.constructible === 'true',
+        viabilise: terrainData.viabilise === 'true',
+        acces_route: terrainData.acces_route === 'true',
+        commission_negociable: terrainData.commission_negociable === 'true',
+        // Gestion des tableaux
+        equipements: terrainData.equipements ? (Array.isArray(terrainData.equipements) ? terrainData.equipements : [terrainData.equipements]) : undefined,
+        documents: terrainData.documents ? (Array.isArray(terrainData.documents) ? terrainData.documents : [terrainData.documents]) : undefined,
+        // Images
+        main_image: mainImagePath,
+        other_images: otherImagesPath.length > 0 ? otherImagesPath : undefined,
+      };
+
       const terrain = await this.terrainService.create(createTerrainDto, agence.id);
+      
       return {
         success: true,
-        message: 'Terrain mis en vente avec succès',
-        data: terrain
+        message: 'Terrain créé avec succès',
+        data: {
+          ...terrain,
+          images_uploaded: images ? images.length : 0,
+          main_image: mainImagePath,
+          other_images: otherImagesPath
+        }
       };
     } catch (error) {
       return {
