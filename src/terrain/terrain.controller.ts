@@ -23,6 +23,25 @@ export class TerrainController {
     private readonly agenceService: AgenceService
   ) {}
 
+  /**
+   * Ajoute les URLs complètes aux images d'un terrain
+   */
+  private addImageUrls(terrain: any, req: any): any {
+    return {
+      ...terrain,
+      main_image_url: terrain.main_image ? `${req.protocol}://${req.get('host')}${terrain.main_image}` : null,
+      other_images_urls: terrain.other_images ? 
+        terrain.other_images.map((img: string) => `${req.protocol}://${req.get('host')}${img}`) : []
+    };
+  }
+
+  /**
+   * Ajoute les URLs complètes aux images d'une liste de terrains
+   */
+  private addImageUrlsToList(terrains: any[], req: any): any[] {
+    return terrains.map(terrain => this.addImageUrls(terrain, req));
+  }
+
   // @Post('upload-image')
   // @Roles(1, 2) // Admin et Agent
   // @UseInterceptors(FileInterceptor('image'))
@@ -346,12 +365,7 @@ export class TerrainController {
       const terrains = await this.terrainService.findByAgenceWithFilters(agence.id, options);
 
       // Ajouter les URLs complètes pour les images
-      const terrainsWithImageUrls = terrains.map(terrain => ({
-        ...terrain,
-        main_image_url: terrain.main_image ? `${req.protocol}://${req.get('host')}${terrain.main_image}` : null,
-        other_images_urls: terrain.other_images ? 
-          terrain.other_images.map(img => `${req.protocol}://${req.get('host')}${img}`) : []
-      }));
+      const terrainsWithImageUrls = this.addImageUrlsToList(terrains, req);
 
       return {
         success: true,
@@ -376,13 +390,17 @@ export class TerrainController {
     description: 'Terrains de l\'agence récupérés avec succès',
     type: [Terrain]
   })
-  async findByAgence(@Param('agenceId', ParseIntPipe) agenceId: number): Promise<any> {
+  async findByAgence(@Param('agenceId', ParseIntPipe) agenceId: number, @Request() req: any): Promise<any> {
     try {
       const terrains = await this.terrainService.findByAgence(agenceId);
+      
+      // Ajouter les URLs complètes pour les images
+      const terrainsWithImageUrls = this.addImageUrlsToList(terrains, req);
+
       return {
         success: true,
         message: 'Terrains de l\'agence récupérés avec succès',
-        data: terrains
+        data: terrainsWithImageUrls
       };
     } catch (error) {
       return {
@@ -401,13 +419,17 @@ export class TerrainController {
     description: 'Terrains constructibles récupérés avec succès',
     type: [Terrain]
   })
-  async findConstructibles(): Promise<any> {
+  async findConstructibles(@Request() req: any): Promise<any> {
     try {
       const terrains = await this.terrainService.findConstructibles();
+      
+      // Ajouter les URLs complètes pour les images
+      const terrainsWithImageUrls = this.addImageUrlsToList(terrains, req);
+
       return {
         success: true,
         message: 'Terrains constructibles récupérés avec succès',
-        data: terrains
+        data: terrainsWithImageUrls
       };
     } catch (error) {
       return {
@@ -465,13 +487,17 @@ export class TerrainController {
     type: Terrain
   })
   @ApiResponse({ status: 404, description: 'Terrain non trouvé' })
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<any> {
+  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req: any): Promise<any> {
     try {
       const terrain = await this.terrainService.findOne(id);
+      
+      // Ajouter les URLs complètes pour les images
+      const terrainWithImageUrls = this.addImageUrls(terrain, req);
+
       return {
         success: true,
         message: 'Terrain récupéré avec succès',
-        data: terrain
+        data: terrainWithImageUrls
       };
     } catch (error) {
       return {
