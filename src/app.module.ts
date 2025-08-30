@@ -32,6 +32,7 @@ import { StatistiqueModule } from './statistique/statistique.module';
 import { DemarcheurModule } from './demarcheur/demarcheur.module';
 import { DeployModule } from './deploy/deploy.module';
 // Supprimé: import { LoyerModule } from './loyer/loyer.module';
+import { TerrainModule } from './terrain/terrain.module';
 
 @Module({
   imports: [
@@ -53,7 +54,7 @@ import { DeployModule } from './deploy/deploy.module';
       username: process.env.DB_USERNAME ?? 'kouao',
       password: process.env.DB_PASSWORD ?? 'Stanislas@001',
       database: process.env.DB_NAME ?? 'kouao_gestion_immo',
-      synchronize: false, // ✅ Changé de false à true
+      synchronize: true, // ✅ Changé de false à true
       logging: true,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/migrations/*{.ts,.js}'],
@@ -78,6 +79,7 @@ import { DeployModule } from './deploy/deploy.module';
     StatistiqueModule,
     DemarcheurModule,
     DeployModule,
+    TerrainModule,
     // Supprimé: LoyerModule,
   ],
   controllers: [AppController],
