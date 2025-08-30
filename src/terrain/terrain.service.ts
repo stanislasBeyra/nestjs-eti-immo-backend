@@ -76,38 +76,92 @@ export class TerrainService {
 
   async findByAgenceWithFilters(
     agenceId: number, 
-    status?: TerrainStatus, 
-    type?: TerrainType, 
-    constructible?: boolean
+    options?: {
+      status?: TerrainStatus;
+      type?: TerrainType;
+      constructible?: boolean;
+      searchTerm?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      minSuperficie?: number;
+      maxSuperficie?: number;
+    }
   ): Promise<Terrain[]> {
     try {
+      // Construction des conditions WHERE
       const whereConditions: any = {
         agence_id: agenceId,
         deleted_at: IsNull()
       };
 
-      // Ajouter les filtres optionnels
-      if (status) {
-        whereConditions.status = status;
+      // Filtres de base
+      if (options?.status) {
+        whereConditions.status = options.status;
       }
-      if (type) {
-        whereConditions.type = type;
+
+      if (options?.type) {
+        whereConditions.type = options.type;
       }
-      if (constructible !== undefined) {
-        whereConditions.constructible = constructible;
-        if (constructible) {
-          whereConditions.status = TerrainStatus.DISPONIBLE; // Seuls les terrains disponibles peuvent être constructibles
+
+      if (options?.constructible !== undefined) {
+        whereConditions.constructible = options.constructible;
+        if (options.constructible) {
+          whereConditions.status = TerrainStatus.DISPONIBLE;
         }
       }
 
+      // Filtres de prix
+      if (options?.minPrice !== undefined && options?.maxPrice !== undefined) {
+        whereConditions.prix_vente = Between(options.minPrice, options.maxPrice);
+      } else if (options?.minPrice !== undefined) {
+        whereConditions.prix_vente = Between(options.minPrice, 999999999);
+      } else if (options?.maxPrice !== undefined) {
+        whereConditions.prix_vente = Between(0, options.maxPrice);
+      }
+
+      // Filtres de superficie
+      if (options?.minSuperficie !== undefined && options?.maxSuperficie !== undefined) {
+        whereConditions.superficie = Between(options.minSuperficie, options.maxSuperficie);
+      } else if (options?.minSuperficie !== undefined) {
+        whereConditions.superficie = Between(options.minSuperficie, 999999);
+      } else if (options?.maxSuperficie !== undefined) {
+        whereConditions.superficie = Between(0, options.maxSuperficie);
+      }
+
+      // Conditions de recherche textuelle
+      let whereOptions: any[] = [];
+      
+      if (options?.searchTerm) {
+        const searchConditions = [
+          { ...whereConditions, title: Like(`%${options.searchTerm}%`) },
+          { ...whereConditions, localite: Like(`%${options.searchTerm}%`) },
+          { ...whereConditions, address: Like(`%${options.searchTerm}%`) },
+          { ...whereConditions, reference: Like(`%${options.searchTerm}%`) }
+        ];
+        whereOptions = searchConditions;
+      } else {
+        whereOptions = [whereConditions];
+      }
+
+      // Déterminer l'ordre de tri
+      let orderBy: any = { created_at: 'DESC' };
+      if (options?.constructible) {
+        orderBy = { prix_m2: 'ASC' };
+      } else if (options?.minPrice || options?.maxPrice) {
+        orderBy = { prix_vente: 'ASC' };
+      } else if (options?.minSuperficie || options?.maxSuperficie) {
+        orderBy = { superficie: 'ASC' };
+      }
+
       return await this.terrainRepository.find({
-        where: whereConditions,
+        where: whereOptions,
         relations: ['agence', 'proprietaire'],
-        order: constructible ? { prix_m2: 'ASC' } : { created_at: 'DESC' }
+        order: orderBy
       });
+
     } catch (error) {
       this.logger.error(`Erreur lors de la récupération des terrains avec filtres pour l'agence ${agenceId}`, error);
-      throw new BadRequestException('Erreur lors de la récupération des terrains avec filtres: ' + error.message);
+      throw new BadRequestException('Erreur lors de la récupération des terrains: ' + error.message);
     }
   }
 

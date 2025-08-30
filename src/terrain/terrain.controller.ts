@@ -61,12 +61,17 @@ export class TerrainController {
   @Get()
   @Roles(1, 2) // Admin et Agent
   @ApiOperation({ 
-    summary: 'Récupérer tous les terrains de l\'agence connectée',
-    description: 'Récupère uniquement les terrains appartenant à l\'agence de l\'utilisateur connecté.'
+    summary: 'Récupérer et rechercher les terrains de l\'agence connectée',
+    description: 'Endpoint unifié pour récupérer et rechercher les terrains avec tous les filtres disponibles.'
   })
   @ApiQuery({ name: 'status', required: false, enum: TerrainStatus, description: 'Filtrer par statut' })
   @ApiQuery({ name: 'type', required: false, enum: TerrainType, description: 'Filtrer par type' })
   @ApiQuery({ name: 'constructible', required: false, type: Boolean, description: 'Filtrer par terrains constructibles' })
+  @ApiQuery({ name: 'search', required: false, description: 'Terme de recherche (titre, localité, adresse, référence)' })
+  @ApiQuery({ name: 'min_price', required: false, type: Number, description: 'Prix minimum' })
+  @ApiQuery({ name: 'max_price', required: false, type: Number, description: 'Prix maximum' })
+  @ApiQuery({ name: 'min_superficie', required: false, type: Number, description: 'Superficie minimum en m²' })
+  @ApiQuery({ name: 'max_superficie', required: false, type: Number, description: 'Superficie maximum en m²' })
   @ApiResponse({ 
     status: 200, 
     description: 'Liste des terrains récupérée avec succès',
@@ -77,6 +82,11 @@ export class TerrainController {
     @Query('status') status?: TerrainStatus,
     @Query('type') type?: TerrainType,
     @Query('constructible') constructible?: string,
+    @Query('search') searchTerm?: string,
+    @Query('min_price') minPrice?: string,
+    @Query('max_price') maxPrice?: string,
+    @Query('min_superficie') minSuperficie?: string,
+    @Query('max_superficie') maxSuperficie?: string,
     @Request() req?: any
   ): Promise<any> {
     try {
@@ -89,21 +99,19 @@ export class TerrainController {
         };
       }
 
-      let terrains: Terrain[];
+      const options = {
+        status,
+        type,
+        constructible: constructible === 'true' ? true : constructible === 'false' ? false : undefined,
+        searchTerm,
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+        minSuperficie: minSuperficie ? parseFloat(minSuperficie) : undefined,
+        maxSuperficie: maxSuperficie ? parseFloat(maxSuperficie) : undefined,
+      };
 
-      // Toujours filtrer par l'agence connectée
-      if (status || type || constructible === 'true') {
-        // Appliquer les filtres supplémentaires en combinaison avec l'agence
-        terrains = await this.terrainService.findByAgenceWithFilters(
-          agence.id, 
-          status, 
-          type, 
-          constructible === 'true'
-        );
-      } else {
-        // Récupérer tous les terrains de l'agence connectée
-        terrains = await this.terrainService.findByAgence(agence.id);
-      }
+      // Utiliser la fonction unifiée
+      const terrains = await this.terrainService.findByAgenceWithFilters(agence.id, options);
 
       return {
         success: true,
@@ -170,101 +178,6 @@ export class TerrainController {
     }
   }
 
-  @Get('search')
-  @Roles(1, 2) // Admin et Agent
-  @ApiOperation({ summary: 'Rechercher des terrains' })
-  @ApiQuery({ name: 'agence_id', required: true, description: 'ID de l\'agence' })
-  @ApiQuery({ name: 'q', required: true, description: 'Terme de recherche' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Résultats de recherche récupérés avec succès',
-    type: [Terrain]
-  })
-  async search(
-    @Query('agence_id') agenceId: string,
-    @Query('q') searchTerm: string
-  ): Promise<any> {
-    try {
-      const terrains = await this.terrainService.searchTerrains(parseInt(agenceId), searchTerm);
-      return {
-        success: true,
-        message: 'Résultats de recherche récupérés avec succès',
-        data: terrains
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Une erreur est survenue',
-        error: error.message || error
-      };
-    }
-  }
-
-  @Get('price-range')
-  @Roles(1, 2) // Admin et Agent
-  @ApiOperation({ summary: 'Rechercher des terrains par fourchette de prix' })
-  @ApiQuery({ name: 'min_price', required: true, type: Number, description: 'Prix minimum' })
-  @ApiQuery({ name: 'max_price', required: true, type: Number, description: 'Prix maximum' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Terrains dans la fourchette de prix récupérés avec succès',
-    type: [Terrain]
-  })
-  async findByPriceRange(
-    @Query('min_price') minPrice: string,
-    @Query('max_price') maxPrice: string
-  ): Promise<any> {
-    try {
-      const terrains = await this.terrainService.findByPriceRange(
-        parseFloat(minPrice), 
-        parseFloat(maxPrice)
-      );
-      return {
-        success: true,
-        message: 'Terrains dans la fourchette de prix récupérés avec succès',
-        data: terrains
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Une erreur est survenue',
-        error: error.message || error
-      };
-    }
-  }
-
-  @Get('superficie-range')
-  @Roles(1, 2) // Admin et Agent
-  @ApiOperation({ summary: 'Rechercher des terrains par fourchette de superficie' })
-  @ApiQuery({ name: 'min_superficie', required: true, type: Number, description: 'Superficie minimum en m²' })
-  @ApiQuery({ name: 'max_superficie', required: true, type: Number, description: 'Superficie maximum en m²' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Terrains dans la fourchette de superficie récupérés avec succès',
-    type: [Terrain]
-  })
-  async findBySuperficieRange(
-    @Query('min_superficie') minSuperficie: string,
-    @Query('max_superficie') maxSuperficie: string
-  ): Promise<any> {
-    try {
-      const terrains = await this.terrainService.findBySuperficieRange(
-        parseFloat(minSuperficie), 
-        parseFloat(maxSuperficie)
-      );
-      return {
-        success: true,
-        message: 'Terrains dans la fourchette de superficie récupérés avec succès',
-        data: terrains
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Une erreur est survenue',
-        error: error.message || error
-      };
-    }
-  }
 
   @Get('stats/:agenceId')
   @Roles(1, 2) // Admin et Agent
