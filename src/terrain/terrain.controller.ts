@@ -345,10 +345,18 @@ export class TerrainController {
       // Utiliser la fonction unifiée
       const terrains = await this.terrainService.findByAgenceWithFilters(agence.id, options);
 
+      // Ajouter les URLs complètes pour les images
+      const terrainsWithImageUrls = terrains.map(terrain => ({
+        ...terrain,
+        main_image_url: terrain.main_image ? `${req.protocol}://${req.get('host')}${terrain.main_image}` : null,
+        other_images_urls: terrain.other_images ? 
+          terrain.other_images.map(img => `${req.protocol}://${req.get('host')}${img}`) : []
+      }));
+
       return {
         success: true,
         message: 'Terrains récupérés avec succès',
-        data: terrains
+        data: terrainsWithImageUrls
       };
     } catch (error) {
       return {
