@@ -21,120 +21,120 @@ export class TerrainController {
     private readonly agenceService: AgenceService
   ) {}
 
-  @Post('upload-image')
-  @Roles(1, 2) // Admin et Agent
-  @UseInterceptors(FileInterceptor('image'))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Uploader une image pour un terrain' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Image uploadée avec succès',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-        data: {
-          type: 'object',
-          properties: {
-            filename: { type: 'string' },
-            path: { type: 'string' },
-            size: { type: 'number' }
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ status: 400, description: 'Fichier non valide' })
-  async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<any> {
-    try {
-      if (!file) {
-        return {
-          success: false,
-          message: 'Aucun fichier fourni',
-          error: 'Le champ image est requis'
-        };
-      }
+  // @Post('upload-image')
+  // @Roles(1, 2) // Admin et Agent
+  // @UseInterceptors(FileInterceptor('image'))
+  // @ApiConsumes('multipart/form-data')
+  // @ApiOperation({ summary: 'Uploader une image pour un terrain' })
+  // @ApiResponse({ 
+  //   status: 200, 
+  //   description: 'Image uploadée avec succès',
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       success: { type: 'boolean' },
+  //       message: { type: 'string' },
+  //       data: {
+  //         type: 'object',
+  //         properties: {
+  //           filename: { type: 'string' },
+  //           path: { type: 'string' },
+  //           size: { type: 'number' }
+  //         }
+  //       }
+  //     }
+  //   }
+  // })
+  // @ApiResponse({ status: 400, description: 'Fichier non valide' })
+  // async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<any> {
+  //   try {
+  //     if (!file) {
+  //       return {
+  //         success: false,
+  //         message: 'Aucun fichier fourni',
+  //         error: 'Le champ image est requis'
+  //       };
+  //     }
 
-      const imagePath = `/uploads/terrain/${file.filename}`;
+  //     const imagePath = `/uploads/terrain/${file.filename}`;
       
-      return {
-        success: true,
-        message: 'Image uploadée avec succès',
-        data: {
-          filename: file.filename,
-          path: imagePath,
-          size: file.size,
-          mimetype: file.mimetype
-        }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Erreur lors de l\'upload',
-        error: error.message || error
-      };
-    }
-  }
+  //     return {
+  //       success: true,
+  //       message: 'Image uploadée avec succès',
+  //       data: {
+  //         filename: file.filename,
+  //         path: imagePath,
+  //         size: file.size,
+  //         mimetype: file.mimetype
+  //       }
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       message: 'Erreur lors de l\'upload',
+  //       error: error.message || error
+  //     };
+  //   }
+  // }
 
-  @Post('upload-images')
-  @Roles(1, 2) // Admin et Agent
-  @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Uploader plusieurs images pour un terrain' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Images uploadées avec succès',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              filename: { type: 'string' },
-              path: { type: 'string' },
-              size: { type: 'number' }
-            }
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ status: 400, description: 'Fichiers non valides' })
-  async uploadImages(@UploadedFiles() files: Express.Multer.File[]): Promise<any> {
-    try {
-      if (!files || files.length === 0) {
-        return {
-          success: false,
-          message: 'Aucun fichier fourni',
-          error: 'Le champ images est requis'
-        };
-      }
+  // @Post('upload-images')
+  // @Roles(1, 2) // Admin et Agent
+  // @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
+  // @ApiConsumes('multipart/form-data')
+  // @ApiOperation({ summary: 'Uploader plusieurs images pour un terrain' })
+  // @ApiResponse({ 
+  //   status: 200, 
+  //   description: 'Images uploadées avec succès',
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       success: { type: 'boolean' },
+  //       message: { type: 'string' },
+  //       data: {
+  //         type: 'array',
+  //         items: {
+  //           type: 'object',
+  //           properties: {
+  //             filename: { type: 'string' },
+  //             path: { type: 'string' },
+  //             size: { type: 'number' }
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // })
+  // @ApiResponse({ status: 400, description: 'Fichiers non valides' })
+  // async uploadImages(@UploadedFiles() files: Express.Multer.File[]): Promise<any> {
+  //   try {
+  //     if (!files || files.length === 0) {
+  //       return {
+  //         success: false,
+  //         message: 'Aucun fichier fourni',
+  //         error: 'Le champ images est requis'
+  //       };
+  //     }
 
-      const uploadedImages = files.map(file => ({
-        filename: file.filename,
-        path: `/uploads/terrain/${file.filename}`,
-        size: file.size,
-        mimetype: file.mimetype
-      }));
+  //     const uploadedImages = files.map(file => ({
+  //       filename: file.filename,
+  //       path: `/uploads/terrain/${file.filename}`,
+  //       size: file.size,
+  //       mimetype: file.mimetype
+  //     }));
 
-      return {
-        success: true,
-        message: `${files.length} image(s) uploadée(s) avec succès`,
-        data: uploadedImages
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Erreur lors de l\'upload',
-        error: error.message || error
-      };
-    }
-  }
+  //     return {
+  //       success: true,
+  //       message: `${files.length} image(s) uploadée(s) avec succès`,
+  //       data: uploadedImages
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       message: 'Erreur lors de l\'upload',
+  //       error: error.message || error
+  //     };
+  //   }
+  // }
 
   @Post()
   @Roles(1, 2) // Admin et Agent
@@ -227,26 +227,85 @@ export class TerrainController {
         }
       }
 
-      // Préparation des données du terrain
+      // Fonction helper pour nettoyer les valeurs
+      const cleanValue = (value: any): any => {
+        if (value === 'undefined' || value === '' || value === null) {
+          return undefined;
+        }
+        return value;
+      };
+
+      const cleanNumericValue = (value: any): number | undefined => {
+        const cleaned = cleanValue(value);
+        if (cleaned === undefined) return undefined;
+        const parsed = parseFloat(cleaned);
+        return isNaN(parsed) ? undefined : parsed;
+      };
+
+      const cleanIntegerValue = (value: any): number | undefined => {
+        const cleaned = cleanValue(value);
+        if (cleaned === undefined) return undefined;
+        const parsed = parseInt(cleaned);
+        return isNaN(parsed) ? undefined : parsed;
+      };
+
+      const cleanBooleanValue = (value: any): boolean | undefined => {
+        const cleaned = cleanValue(value);
+        if (cleaned === undefined) return undefined;
+        return cleaned === 'true';
+      };
+
+      const cleanArrayValue = (value: any): string[] | undefined => {
+        if (!value) return undefined;
+        if (Array.isArray(value)) {
+          const filtered = value.filter(v => v && v !== 'undefined' && v !== '');
+          return filtered.length > 0 ? filtered : undefined;
+        }
+        const cleaned = cleanValue(value);
+        return cleaned ? [cleaned] : undefined;
+      };
+
+      // Préparation des données du terrain avec nettoyage
       const createTerrainDto: CreateTerrainDto = {
-        ...terrainData,
-        // Conversion des strings en nombres si nécessaire
+        // Champs string obligatoires
+        title: terrainData.title,
+        address: terrainData.address,
+        localite: terrainData.localite,
+        type: terrainData.type,
+        
+        // Champs string optionnels
+        description: cleanValue(terrainData.description),
+        commune: cleanValue(terrainData.commune),
+        zone: cleanValue(terrainData.zone),
+        status: cleanValue(terrainData.status),
+        titre_foncier: cleanValue(terrainData.titre_foncier),
+        reference_cadastrale: cleanValue(terrainData.reference_cadastrale),
+        reference: cleanValue(terrainData.reference),
+        servitudes: cleanValue(terrainData.servitudes),
+        coordonnees_gps: cleanValue(terrainData.coordonnees_gps),
+        notes_internes: cleanValue(terrainData.notes_internes),
+        date_mise_vente: cleanValue(terrainData.date_mise_vente),
+
+        // Conversion des nombres
         prix_vente: parseFloat(terrainData.prix_vente),
         superficie: parseFloat(terrainData.superficie),
-        superficie_constructible: terrainData.superficie_constructible ? parseFloat(terrainData.superficie_constructible) : undefined,
-        prix_m2: terrainData.prix_m2 ? parseFloat(terrainData.prix_m2) : undefined,
-        frais_agence: terrainData.frais_agence ? parseFloat(terrainData.frais_agence) : undefined,
-        proprietaire_id: terrainData.proprietaire_id ? parseInt(terrainData.proprietaire_id) : undefined,
-        latitude: terrainData.latitude ? parseFloat(terrainData.latitude) : undefined,
-        longitude: terrainData.longitude ? parseFloat(terrainData.longitude) : undefined,
+        superficie_constructible: cleanNumericValue(terrainData.superficie_constructible),
+        prix_m2: cleanNumericValue(terrainData.prix_m2),
+        frais_agence: cleanNumericValue(terrainData.frais_agence),
+        proprietaire_id: cleanIntegerValue(terrainData.proprietaire_id),
+        latitude: cleanNumericValue(terrainData.latitude),
+        longitude: cleanNumericValue(terrainData.longitude),
+
         // Conversion des booleans
-        constructible: terrainData.constructible === 'true',
-        viabilise: terrainData.viabilise === 'true',
-        acces_route: terrainData.acces_route === 'true',
-        commission_negociable: terrainData.commission_negociable === 'true',
+        constructible: cleanBooleanValue(terrainData.constructible),
+        viabilise: cleanBooleanValue(terrainData.viabilise),
+        acces_route: cleanBooleanValue(terrainData.acces_route),
+        commission_negociable: cleanBooleanValue(terrainData.commission_negociable),
+
         // Gestion des tableaux
-        equipements: terrainData.equipements ? (Array.isArray(terrainData.equipements) ? terrainData.equipements : [terrainData.equipements]) : undefined,
-        documents: terrainData.documents ? (Array.isArray(terrainData.documents) ? terrainData.documents : [terrainData.documents]) : undefined,
+        equipements: cleanArrayValue(terrainData.equipements),
+        documents: cleanArrayValue(terrainData.documents),
+
         // Images
         main_image: mainImagePath,
         other_images: otherImagesPath.length > 0 ? otherImagesPath : undefined,
